@@ -16,6 +16,7 @@
  */
 package com.tom_roush.pdfbox.pdfparser;
 
+import android.os.Build;
 import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
@@ -23,6 +24,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
+import java.util.Arrays;
+import java.util.function.Consumer;
 
 import com.tom_roush.pdfbox.cos.COSArray;
 import com.tom_roush.pdfbox.cos.COSBase;
@@ -46,8 +49,8 @@ import static com.tom_roush.pdfbox.util.Charsets.ISO_8859_1;
  *
  * @author Ben Litchfield
  */
-public abstract class BaseParser
-{
+public abstract class BaseParser {
+    private static final String TAG = "BaseParser";
     private static final long OBJECT_NUMBER_THRESHOLD = 10000000000L;
 
     private static final long GENERATION_NUMBER_THRESHOLD = 65535;
@@ -124,59 +127,52 @@ public abstract class BaseParser
     /**
      * Default constructor.
      */
-    BaseParser(SequentialSource pdfSource)
-    {
+    BaseParser(SequentialSource pdfSource) {
         this.seqSource = pdfSource;
     }
 
-    private static boolean isHexDigit(char ch)
-    {
+    private static boolean isHexDigit(char ch) {
         return isDigit(ch) ||
-            (ch >= 'a' && ch <= 'f') ||
-            (ch >= 'A' && ch <= 'F');
+                (ch >= 'a' && ch <= 'f') ||
+                (ch >= 'A' && ch <= 'F');
     }
 
     /**
      * This will parse a PDF dictionary value.
      *
      * @return The parsed Dictionary object.
-     *
      * @throws IOException If there is an error parsing the dictionary object.
      */
-    private COSBase parseCOSDictionaryValue() throws IOException
-    {
+    private COSBase parseCOSDictionaryValue() throws IOException {
+        Log.d(TAG, "parseCOSDictionaryValue: ");
         long numOffset = seqSource.getPosition();
         COSBase value = parseDirObject();
         skipSpaces();
         // proceed if the given object is a number and the following is a number as well
-        if ((!(value instanceof COSNumber) || !isDigit()))
-        {
+        if ((!(value instanceof COSNumber) || !isDigit())) {
             return value;
         }
         // read the remaining information of the object number
         long genOffset = seqSource.getPosition();
+        Log.d(TAG, "parseCOSDictionaryValue: genOffset");
         COSBase generationNumber = parseDirObject();
         skipSpaces();
         readExpectedChar('R');
-        if (!(value instanceof COSInteger))
-        {
+        if (!(value instanceof COSInteger)) {
             Log.e("PdfBox-Android", "expected number, actual=" + value + " at offset " + numOffset);
             return COSNull.NULL;
         }
-        if (!(generationNumber instanceof COSInteger))
-        {
+        if (!(generationNumber instanceof COSInteger)) {
             Log.e("PdfBox-Android", "expected number, actual=" + generationNumber + " at offset " + genOffset);
             return COSNull.NULL;
         }
         long objNumber = ((COSInteger) value).longValue();
-        if (objNumber <= 0)
-        {
+        if (objNumber <= 0) {
             Log.w("PdfBox-Android", "invalid object number value =" + objNumber + " at offset " + numOffset);
             return COSNull.NULL;
         }
         int genNumber = ((COSInteger) generationNumber).intValue();
-        if (genNumber < 0)
-        {
+        if (genNumber < 0) {
             Log.e("PdfBox-Android", "invalid generation number value =" + genNumber + " at offset " + numOffset);
             return COSNull.NULL;
         }
@@ -184,12 +180,10 @@ public abstract class BaseParser
         return getObjectFromPool(new COSObjectKey(objNumber, genNumber));
     }
 
-    private COSBase getObjectFromPool(COSObjectKey key) throws IOException
-    {
-        if (document == null)
-        {
+    private COSBase getObjectFromPool(COSObjectKey key) throws IOException {
+        if (document == null) {
             throw new IOException("object reference " + key + " at offset " + seqSource.getPosition()
-                + " in content stream");
+                    + " in content stream");
         }
         return document.getObjectFromPool(key);
     }
@@ -198,39 +192,30 @@ public abstract class BaseParser
      * This will parse a PDF dictionary.
      *
      * @return The parsed dictionary, never null.
-     *
      * @throws IOException If there is an error reading the stream.
      */
-    protected COSDictionary parseCOSDictionary() throws IOException
-    {
+    protected COSDictionary parseCOSDictionary() throws IOException {
+        Log.d(TAG, "parseCOSDictionary: ");
         readExpectedChar('<');
         readExpectedChar('<');
         skipSpaces();
         COSDictionary obj = new COSDictionary();
         boolean done = false;
-        while (!done)
-        {
+        while (!done) {
             skipSpaces();
             char c = (char) seqSource.peek();
-            if (c == '>')
-            {
+            if (c == '>') {
                 done = true;
-            }
-            else if (c == '/')
-            {
+            } else if (c == '/') {
                 // something went wrong, most likely the dictionary is corrupted
                 // stop immediately and return everything read so far
-                if (!parseCOSDictionaryNameValuePair(obj))
-                {
+                if (!parseCOSDictionaryNameValuePair(obj)) {
                     return obj;
                 }
-            }
-            else
-            {
+            } else {
                 // invalid dictionary, we were expecting a /Name, read until the end or until we can recover
                 Log.w("PdfBox-Android", "Invalid dictionary, found: '" + c + "' but expected: '/' at offset " + seqSource.getPosition());
-                if (readUntilEndOfCOSDictionary())
-                {
+                if (readUntilEndOfCOSDictionary()) {
                     // we couldn't recover
                     return obj;
                 }
@@ -247,30 +232,23 @@ public abstract class BaseParser
      *
      * @return true if the end of the object or the file has been found, false if not, i.e. that the
      * caller can continue to parse the dictionary at the current position.
-     *
      * @throws IOException if there is a reading error.
      */
-    private boolean readUntilEndOfCOSDictionary() throws IOException
-    {
+    private boolean readUntilEndOfCOSDictionary() throws IOException {
         int c = seqSource.read();
-        while (c != -1 && c != '/' && c != '>')
-        {
+        while (c != -1 && c != '/' && c != '>') {
             // in addition to stopping when we find / or >, we also want
             // to stop when we find endstream or endobj.
-            if (c == E)
-            {
+            if (c == E) {
                 c = seqSource.read();
-                if (c == N)
-                {
+                if (c == N) {
                     c = seqSource.read();
-                    if (c == D)
-                    {
+                    if (c == D) {
                         c = seqSource.read();
                         boolean isStream = c == S && seqSource.read() == T && seqSource.read() == R
-                            && seqSource.read() == E && seqSource.read() == A && seqSource.read() == M;
+                                && seqSource.read() == E && seqSource.read() == A && seqSource.read() == M;
                         boolean isObj = !isStream && c == O && seqSource.read() == B && seqSource.read() == J;
-                        if (isStream || isObj)
-                        {
+                        if (isStream || isObj) {
                             // we're done reading this object!
                             return true;
                         }
@@ -279,34 +257,27 @@ public abstract class BaseParser
             }
             c = seqSource.read();
         }
-        if (c == -1)
-        {
+        if (c == -1) {
             return true;
         }
         seqSource.unread(c);
         return false;
     }
 
-    private boolean parseCOSDictionaryNameValuePair(COSDictionary obj) throws IOException
-    {
+    private boolean parseCOSDictionaryNameValuePair(COSDictionary obj) throws IOException {
+        Log.d(TAG, "parseCOSDictionaryNameValuePair: ");
         COSName key = parseCOSName();
-        if (key == null || key.getName().isEmpty())
-        {
+        if (key == null || key.getName().isEmpty()) {
             Log.w("PdfBox-Android", "Empty COSName at offset " + seqSource.getPosition());
         }
         COSBase value = parseCOSDictionaryValue();
         skipSpaces();
-        if (value == null)
-        {
+        if (value == null) {
             Log.w("PdfBox-Android", "Bad dictionary declaration at offset " + seqSource.getPosition());
             return false;
-        }
-        else if (value instanceof COSInteger && !((COSInteger)value).isValid())
-        {
+        } else if (value instanceof COSInteger && !((COSInteger) value).isValid()) {
             Log.w("PdfBox-Android", "Skipped out of range number value at offset " + seqSource.getPosition());
-        }
-        else
-        {
+        } else {
             // label this item as direct, to avoid signature problems.
             value.setDirect(true);
             obj.setItem(key, value);
@@ -314,8 +285,7 @@ public abstract class BaseParser
         return true;
     }
 
-    protected void skipWhiteSpaces() throws IOException
-    {
+    protected void skipWhiteSpaces() throws IOException {
         //PDF Ref 3.2.7 A stream must be followed by either
         //a CRLF or LF but nothing else.
 
@@ -324,23 +294,18 @@ public abstract class BaseParser
         //see brother_scan_cover.pdf, it adds whitespaces
         //after the stream but before the start of the
         //data, so just read those first
-        while (ASCII_SPACE == whitespace)
-        {
+        while (ASCII_SPACE == whitespace) {
             whitespace = seqSource.read();
         }
 
-        if (ASCII_CR == whitespace)
-        {
+        if (ASCII_CR == whitespace) {
             whitespace = seqSource.read();
-            if (ASCII_LF != whitespace)
-            {
+            if (ASCII_LF != whitespace) {
                 seqSource.unread(whitespace);
                 //The spec says this is invalid but it happens in the real
                 //world so we must support it.
             }
-        }
-        else if (ASCII_LF != whitespace)
-        {
+        } else if (ASCII_LF != whitespace) {
             //we are in an error.
             //but again we will do a lenient parsing and just assume that everything
             //is fine
@@ -351,20 +316,18 @@ public abstract class BaseParser
     /**
      * This is really a bug in the Document creators code, but it caused a crash in PDFBox, the first bug was in this
      * format: /Title ( (5) /Creator which was patched in 1 place.
-     *
+     * <p>
      * However it missed the case where the number of opening and closing parenthesis isn't balanced
-     *
+     * <p>
      * The second bug was in this format /Title (c:\) /Producer
-     *
+     * <p>
      * This patch moves this code out of the parseCOSString method, so it can be used twice.
      *
      * @param bracesParameter the number of braces currently open.
-     *
      * @return the corrected value of the brace counter
      * @throws IOException
      */
-    private int checkForEndOfString(final int bracesParameter) throws IOException
-    {
+    private int checkForEndOfString(final int bracesParameter) throws IOException {
         int braces = bracesParameter;
         byte[] nextThreeBytes = new byte[3];
         int amountRead = seqSource.read(nextThreeBytes);
@@ -375,16 +338,13 @@ public abstract class BaseParser
         // 2. COSDictionary ends in the next line: CR + LF + '>'
         // 3. Next line contains another COSObject: CR + '/'
         // 4. COSDictionary ends in the next line: CR + '>'
-        if (amountRead == 3 && nextThreeBytes[0] == ASCII_CR)
-        {
-            if ( (nextThreeBytes[1] == ASCII_LF && (nextThreeBytes[2] == '/') || nextThreeBytes[2] == '>')
-                || nextThreeBytes[1] == '/' || nextThreeBytes[1] == '>')
-            {
+        if (amountRead == 3 && nextThreeBytes[0] == ASCII_CR) {
+            if ((nextThreeBytes[1] == ASCII_LF && (nextThreeBytes[2] == '/') || nextThreeBytes[2] == '>')
+                    || nextThreeBytes[1] == '/' || nextThreeBytes[1] == '>') {
                 braces = 0;
             }
         }
-        if (amountRead > 0)
-        {
+        if (amountRead > 0) {
             seqSource.unread(nextThreeBytes, 0, amountRead);
         }
         return braces;
@@ -394,20 +354,16 @@ public abstract class BaseParser
      * This will parse a PDF string.
      *
      * @return The parsed PDF string.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected COSString parseCOSString() throws IOException
-    {
+    protected COSString parseCOSString() throws IOException {
+        Log.d(TAG, "parseCOSString: ");
         char nextChar = (char) seqSource.read();
-        if (nextChar == '<')
-        {
+        if (nextChar == '<') {
             return parseCOSHexString();
-        }
-        else if (nextChar != '(')
-        {
-            throw new IOException( "parseCOSString string should start with '(' or '<' and not '" +
-                nextChar + "' at offset " + seqSource.getPosition());
+        } else if (nextChar != '(') {
+            throw new IOException("parseCOSString string should start with '(' or '<' and not '" +
+                    nextChar + "' at offset " + seqSource.getPosition());
         }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -415,32 +371,24 @@ public abstract class BaseParser
         // This is the number of braces read
         int braces = 1;
         int c = seqSource.read();
-        while( braces > 0 && c != -1)
-        {
-            char ch = (char)c;
+        while (braces > 0 && c != -1) {
+            char ch = (char) c;
             int nextc = -2; // not yet read
 
-            if (ch == ')')
-            {
+            if (ch == ')') {
 
                 braces--;
                 braces = checkForEndOfString(braces);
-                if( braces != 0 )
-                {
+                if (braces != 0) {
                     out.write(ch);
                 }
-            }
-            else if (ch == '(')
-            {
+            } else if (ch == '(') {
                 braces++;
                 out.write(ch);
-            }
-            else if( ch == '\\' )
-            {
+            } else if (ch == '\\') {
                 //patched by ram
                 char next = (char) seqSource.read();
-                switch(next)
-                {
+                switch (next) {
                     case 'n':
                         out.write('\n');
                         break;
@@ -459,12 +407,9 @@ public abstract class BaseParser
                     case ')':
                         // PDFBox 276 /Title (c:\)
                         braces = checkForEndOfString(braces);
-                        if( braces != 0 )
-                        {
+                        if (braces != 0) {
                             out.write(next);
-                        }
-                        else
-                        {
+                        } else {
                             out.write('\\');
                         }
                         break;
@@ -476,8 +421,7 @@ public abstract class BaseParser
                     case ASCII_CR:
                         //this is a break in the line so ignore it and the newline and continue
                         c = seqSource.read();
-                        while( isEOL(c) && c != -1)
-                        {
+                        while (isEOL(c) && c != -1) {
                             c = seqSource.read();
                         }
                         nextc = c;
@@ -491,36 +435,27 @@ public abstract class BaseParser
                     case '6':
                     case '7':
                         StringBuilder octal = new StringBuilder();
-                        octal.append( next );
+                        octal.append(next);
                         c = seqSource.read();
-                        char digit = (char)c;
-                        if( digit >= '0' && digit <= '7' )
-                        {
-                            octal.append( digit );
+                        char digit = (char) c;
+                        if (digit >= '0' && digit <= '7') {
+                            octal.append(digit);
                             c = seqSource.read();
-                            digit = (char)c;
-                            if( digit >= '0' && digit <= '7' )
-                            {
-                                octal.append( digit );
-                            }
-                            else
-                            {
+                            digit = (char) c;
+                            if (digit >= '0' && digit <= '7') {
+                                octal.append(digit);
+                            } else {
                                 nextc = c;
                             }
-                        }
-                        else
-                        {
+                        } else {
                             nextc = c;
                         }
 
                         int character = 0;
-                        try
-                        {
-                            character = Integer.parseInt( octal.toString(), 8 );
-                        }
-                        catch( NumberFormatException e )
-                        {
-                            throw new IOException( "Error: Expected octal character, actual='" + octal + "'", e );
+                        try {
+                            character = Integer.parseInt(octal.toString(), 8);
+                        } catch (NumberFormatException e) {
+                            throw new IOException("Error: Expected octal character, actual='" + octal + "'", e);
                         }
                         out.write(character);
                         break;
@@ -529,22 +464,16 @@ public abstract class BaseParser
                         // see 7.3.4.2 Literal Strings for further information
                         out.write(next);
                 }
-            }
-            else
-            {
+            } else {
                 out.write(ch);
             }
-            if (nextc != -2)
-            {
+            if (nextc != -2) {
                 c = nextc;
-            }
-            else
-            {
+            } else {
                 c = seqSource.read();
             }
         }
-        if (c != -1)
-        {
+        if (c != -1) {
             seqSource.unread(c);
         }
         return new COSString(out.toByteArray());
@@ -555,59 +484,45 @@ public abstract class BaseParser
      * meaning that we stop if a not allowed character is found.
      * This is necessary in order to detect malformed input and
      * be able to skip to next object start.
-     *
+     * <p>
      * We assume starting '&lt;' was already read.
      *
      * @return The parsed PDF string.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    private COSString parseCOSHexString() throws IOException
-    {
+    private COSString parseCOSHexString() throws IOException {
+        Log.d(TAG, "parseCOSHexString: ");
         final StringBuilder sBuf = new StringBuilder();
-        while( true )
-        {
+        while (true) {
             int c = seqSource.read();
-            if ( isHexDigit((char)c) )
-            {
-                sBuf.append( (char) c );
-            }
-            else if ( c == '>' )
-            {
+            if (isHexDigit((char) c)) {
+                sBuf.append((char) c);
+            } else if (c == '>') {
                 break;
-            }
-            else if ( c < 0 )
-            {
-                throw new IOException( "Missing closing bracket for hex string. Reached EOS." );
-            }
-            else if ( ( c == ' ' ) || ( c == '\n' ) ||
-                ( c == '\t' ) || ( c == '\r' ) ||
-                ( c == '\b' ) || ( c == '\f' ) )
-            {
+            } else if (c < 0) {
+                throw new IOException("Missing closing bracket for hex string. Reached EOS.");
+            } else if ((c == ' ') || (c == '\n') ||
+                    (c == '\t') || (c == '\r') ||
+                    (c == '\b') || (c == '\f')) {
                 continue;
-            }
-            else
-            {
+            } else {
                 // if invalid chars was found: discard last
                 // hex character if it is not part of a pair
-                if (sBuf.length()%2!=0)
-                {
-                    sBuf.deleteCharAt(sBuf.length()-1);
+                if (sBuf.length() % 2 != 0) {
+                    sBuf.deleteCharAt(sBuf.length() - 1);
                 }
 
                 // read till the closing bracket was found
-                do
-                {
+                do {
                     c = seqSource.read();
                 }
-                while ( c != '>' && c >= 0 );
+                while (c != '>' && c >= 0);
 
                 // might have reached EOF while looking for the closing bracket
                 // this can happen for malformed PDFs only. Make sure that there is
                 // no endless loop.
-                if ( c < 0 )
-                {
-                    throw new IOException( "Missing closing bracket for hex string. Reached EOS." );
+                if (c < 0) {
+                    throw new IOException("Missing closing bracket for hex string. Reached EOS.");
                 }
 
                 // exit loop
@@ -621,64 +536,50 @@ public abstract class BaseParser
      * This will parse a PDF array object.
      *
      * @return The parsed PDF array.
-     *
      * @throws IOException If there is an error parsing the stream.
      */
-    protected COSArray parseCOSArray() throws IOException
-    {
+    protected COSArray parseCOSArray() throws IOException {
+        Log.d(TAG, "parseCOSArray: ");
         long startPosition = seqSource.getPosition();
         readExpectedChar('[');
         COSArray po = new COSArray();
         COSBase pbo;
         skipSpaces();
         int i;
-        while( ((i = seqSource.peek()) > 0) && ((char)i != ']') )
-        {
+        while (((i = seqSource.peek()) > 0) && ((char) i != ']')) {
             pbo = parseDirObject();
-            if( pbo instanceof COSObject )
-            {
+            if (pbo instanceof COSObject) {
                 // We have to check if the expected values are there or not PDFBOX-385
-                if (po.size() > 0 && po.get(po.size() - 1) instanceof COSInteger)
-                {
-                    COSInteger genNumber = (COSInteger)po.remove( po.size() -1 );
-                    if (po.size() > 0 && po.get(po.size() - 1) instanceof COSInteger)
-                    {
-                        COSInteger number = (COSInteger)po.remove( po.size() -1 );
+                if (po.size() > 0 && po.get(po.size() - 1) instanceof COSInteger) {
+                    COSInteger genNumber = (COSInteger) po.remove(po.size() - 1);
+                    if (po.size() > 0 && po.get(po.size() - 1) instanceof COSInteger) {
+                        COSInteger number = (COSInteger) po.remove(po.size() - 1);
                         COSObjectKey key = new COSObjectKey(number.longValue(), genNumber.intValue());
                         pbo = getObjectFromPool(key);
-                    }
-                    else
-                    {
+                    } else {
                         // the object reference is somehow wrong
                         pbo = null;
                     }
-                }
-                else
-                {
+                } else {
                     pbo = null;
                 }
             }
-            if( pbo != null )
-            {
-                po.add( pbo );
-            }
-            else
-            {
+            if (pbo != null) {
+                po.add(pbo);
+            } else {
                 //it could be a bad object in the array which is just skipped
                 Log.w("PdfBox-Android", "Corrupt array element at offset "
-                    + seqSource.getPosition() + ", start offset: " + startPosition);
+                        + seqSource.getPosition() + ", start offset: " + startPosition);
                 String isThisTheEnd = readString();
                 // return immediately if a corrupt element is followed by another array
                 // to avoid a possible infinite recursion as most likely the whole array is corrupted
-                if (isThisTheEnd.isEmpty() && seqSource.peek() == '[')
-                {
+                if (isThisTheEnd.isEmpty() && seqSource.peek() == '[') {
                     return po;
                 }
                 seqSource.unread(isThisTheEnd.getBytes(ISO_8859_1));
                 // This could also be an "endobj" or "endstream" which means we can assume that
                 // the array has ended.
-                if(ENDOBJ_STRING.equals(isThisTheEnd) || ENDSTREAM_STRING.equals(isThisTheEnd))
-                {
+                if (ENDOBJ_STRING.equals(isThisTheEnd) || ENDSTREAM_STRING.equals(isThisTheEnd)) {
                     return po;
                 }
             }
@@ -696,11 +597,10 @@ public abstract class BaseParser
      * @param ch The character
      * @return true if the character terminates a PDF name, otherwise false.
      */
-    protected boolean isEndOfName(int ch)
-    {
+    protected boolean isEndOfName(int ch) {
         return ch == ASCII_SPACE || ch == ASCII_CR || ch == ASCII_LF || ch == 9 || ch == '>' ||
-            ch == '<' || ch == '[' || ch =='/' || ch ==']' || ch ==')' || ch =='(' ||
-            ch == 0 || ch == '\f' || ch == '%';
+                ch == '<' || ch == '[' || ch == '/' || ch == ']' || ch == ')' || ch == '(' ||
+                ch == 0 || ch == '\f' || ch == '%';
     }
 
     /**
@@ -709,16 +609,14 @@ public abstract class BaseParser
      * @return The parsed PDF name.
      * @throws IOException If there is an error reading from the stream.
      */
-    protected COSName parseCOSName() throws IOException
-    {
+    protected COSName parseCOSName() throws IOException {
+        Log.d(TAG, "parseCOSName: ");
         readExpectedChar('/');
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int c = seqSource.read();
-        while (c != -1)
-        {
+        while (c != -1) {
             int ch = c;
-            if (ch == '#')
-            {
+            if (ch == '#') {
                 int ch1 = seqSource.read();
                 int ch2 = seqSource.read();
                 // Prior to PDF v1.2, the # was not a special character.  Also,
@@ -727,24 +625,17 @@ public abstract class BaseParser
                 // PDF versions of 1.2 or later.  The solution here is that we
                 // interpret the # as an escape only when it is followed by two
                 // valid hex digits.
-                if (isHexDigit((char)ch1) && isHexDigit((char)ch2))
-                {
+                if (isHexDigit((char) ch1) && isHexDigit((char) ch2)) {
                     String hex = Character.toString((char) ch1) + (char) ch2;
-                    try
-                    {
+                    try {
                         buffer.write(Integer.parseInt(hex, 16));
-                    }
-                    catch (NumberFormatException e)
-                    {
+                    } catch (NumberFormatException e) {
                         throw new IOException("Error: expected hex digit, actual='" + hex + "'", e);
                     }
                     c = seqSource.read();
-                }
-                else
-                {
+                } else {
                     // check for premature EOF
-                    if (ch2 == -1 || ch1 == -1)
-                    {
+                    if (ch2 == -1 || ch1 == -1) {
                         Log.e("PdfBox-Android", "Premature EOF in BaseParser#parseCOSName");
                         c = -1;
                         break;
@@ -753,30 +644,22 @@ public abstract class BaseParser
                     c = ch1;
                     buffer.write(ch);
                 }
-            }
-            else if (isEndOfName(ch))
-            {
+            } else if (isEndOfName(ch)) {
                 break;
-            }
-            else
-            {
+            } else {
                 buffer.write(ch);
                 c = seqSource.read();
             }
         }
-        if (c != -1)
-        {
+        if (c != -1) {
             seqSource.unread(c);
         }
 
         byte[] bytes = buffer.toByteArray();
         String string;
-        if (isValidUTF8(bytes))
-        {
+        if (isValidUTF8(bytes)) {
             string = new String(bytes, Charsets.UTF_8);
-        }
-        else
-        {
+        } else {
             // some malformed PDFs don't use UTF-8 see PDFBOX-3347
             string = new String(bytes, Charsets.WINDOWS_1252);
         }
@@ -786,15 +669,11 @@ public abstract class BaseParser
     /**
      * Returns true if a byte sequence is valid UTF-8.
      */
-    private boolean isValidUTF8(byte[] input)
-    {
-        try
-        {
+    private boolean isValidUTF8(byte[] input) {
+        try {
             utf8Decoder.decode(ByteBuffer.wrap(input));
             return true;
-        }
-        catch (CharacterCodingException e)
-        {
+        } catch (CharacterCodingException e) {
             return false;
         }
     }
@@ -803,43 +682,31 @@ public abstract class BaseParser
      * This will parse a boolean object from the stream.
      *
      * @return The parsed boolean object.
-     *
      * @throws IOException If an IO error occurs during parsing.
      */
-    protected COSBoolean parseBoolean() throws IOException
-    {
+    protected COSBoolean parseBoolean() throws IOException {
+        Log.d(TAG, "parseBoolean: ");
         COSBoolean retval;
         char c = (char) seqSource.peek();
-        if( c == 't' )
-        {
-            String trueString = new String( seqSource.readFully( 4 ), ISO_8859_1 );
-            if( !trueString.equals( TRUE ) )
-            {
-                throw new IOException( "Error parsing boolean: expected='true' actual='" + trueString
-                    + "' at offset " + seqSource.getPosition());
-            }
-            else
-            {
+        if (c == 't') {
+            String trueString = new String(seqSource.readFully(4), ISO_8859_1);
+            if (!trueString.equals(TRUE)) {
+                throw new IOException("Error parsing boolean: expected='true' actual='" + trueString
+                        + "' at offset " + seqSource.getPosition());
+            } else {
                 retval = COSBoolean.TRUE;
             }
-        }
-        else if( c == 'f' )
-        {
-            String falseString = new String( seqSource.readFully( 5 ), ISO_8859_1 );
-            if( !falseString.equals( FALSE ) )
-            {
-                throw new IOException( "Error parsing boolean: expected='true' actual='" + falseString
-                    + "' at offset " + seqSource.getPosition());
-            }
-            else
-            {
+        } else if (c == 'f') {
+            String falseString = new String(seqSource.readFully(5), ISO_8859_1);
+            if (!falseString.equals(FALSE)) {
+                throw new IOException("Error parsing boolean: expected='true' actual='" + falseString
+                        + "' at offset " + seqSource.getPosition());
+            } else {
                 retval = COSBoolean.FALSE;
             }
-        }
-        else
-        {
-            throw new IOException( "Error parsing boolean expected='t or f' actual='" + c
-                + "' at offset " + seqSource.getPosition());
+        } else {
+            throw new IOException("Error parsing boolean expected='t or f' actual='" + c
+                    + "' at offset " + seqSource.getPosition());
         }
         return retval;
     }
@@ -848,15 +715,21 @@ public abstract class BaseParser
      * This will parse a directory object from the stream.
      *
      * @return The parsed object.
-     *
      * @throws IOException If there is an error during parsing.
      */
-    protected COSBase parseDirObject() throws IOException
-    {
+    protected COSBase parseDirObject() throws IOException {
+        Log.d(TAG, "parseDirObject: ");
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//
+//            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+//            for (StackTraceElement stackTraceElement : stackTrace) {
+//                Log.d(TAG, "parseDirObject: " + stackTraceElement);
+//            }
+//        }
         skipSpaces();
-        char c = (char)seqSource.peek();
-        switch(c)
-        {
+        char c = (char) seqSource.peek();
+        Log.d(TAG, "parseDirObject: c:" + c);
+        switch (c) {
             case '<':
                 // pull off first left bracket
                 int leftBracket = seqSource.read();
@@ -877,35 +750,28 @@ public abstract class BaseParser
                 readExpectedString(NULL);
                 return COSNull.NULL;
             case 't':
-                String trueString = new String( seqSource.readFully(4), ISO_8859_1 );
-                if( trueString.equals( TRUE ) )
-                {
+                String trueString = new String(seqSource.readFully(4), ISO_8859_1);
+                if (trueString.equals(TRUE)) {
                     return COSBoolean.TRUE;
-                }
-                else
-                {
-                    throw new IOException( "expected true actual='" + trueString + "' " + seqSource +
-                        "' at offset " + seqSource.getPosition());
+                } else {
+                    throw new IOException("expected true actual='" + trueString + "' " + seqSource +
+                            "' at offset " + seqSource.getPosition());
                 }
             case 'f':
-                String falseString = new String( seqSource.readFully(5), ISO_8859_1 );
-                if( falseString.equals( FALSE ) )
-                {
+                String falseString = new String(seqSource.readFully(5), ISO_8859_1);
+                if (falseString.equals(FALSE)) {
                     return COSBoolean.FALSE;
-                }
-                else
-                {
-                    throw new IOException( "expected false actual='" + falseString + "' " + seqSource +
-                        "' at offset " + seqSource.getPosition());
+                } else {
+                    throw new IOException("expected false actual='" + falseString + "' " + seqSource +
+                            "' at offset " + seqSource.getPosition());
                 }
             case 'R':
                 seqSource.read();
                 return new COSObject(null);
-            case (char)-1:
+            case (char) -1:
                 return null;
             default:
-                if( Character.isDigit(c) || c == '-' || c == '+' || c == '.')
-                {
+                if (Character.isDigit(c) || c == '-' || c == '+' || c == '.') {
                     return parseCOSNumber();
                 }
                 // This is not suppose to happen, but we will allow for it
@@ -913,43 +779,37 @@ public abstract class BaseParser
                 // follow the spec
                 long startOffset = seqSource.getPosition();
                 String badString = readString();
-                if (badString.isEmpty())
-                {
+                if (badString.isEmpty()) {
                     int peek = seqSource.peek();
                     // we can end up in an infinite loop otherwise
                     throw new IOException(
-                        "Unknown dir object c='" + c + "' cInt=" + (int) c + " peek='" + (char) peek
-                            + "' peekInt=" + peek + " at offset " + seqSource.getPosition()
-                            + " (start offset: " + startOffset + ")");
+                            "Unknown dir object c='" + c + "' cInt=" + (int) c + " peek='" + (char) peek
+                                    + "' peekInt=" + peek + " at offset " + seqSource.getPosition()
+                                    + " (start offset: " + startOffset + ")");
                 }
 
                 // if it's an endstream/endobj, we want to put it back so the caller will see it
-                if (ENDOBJ_STRING.equals(badString) || ENDSTREAM_STRING.equals(badString))
-                {
+                if (ENDOBJ_STRING.equals(badString) || ENDSTREAM_STRING.equals(badString)) {
                     seqSource.unread(badString.getBytes(ISO_8859_1));
-                }
-                else
-                {
+                } else {
                     Log.w("PdfBox-Android", "Skipped unexpected dir object = '" + badString + "' at offset "
-                        + seqSource.getPosition() + " (start offset: " + startOffset + ")");
+                            + seqSource.getPosition() + " (start offset: " + startOffset + ")");
                 }
         }
         return null;
     }
 
-    private COSNumber parseCOSNumber() throws IOException
-    {
+    private COSNumber parseCOSNumber() throws IOException {
+        Log.d(TAG, "parseCOSNumber: ");
         StringBuilder buf = new StringBuilder();
         int ic = seqSource.read();
         char c = (char) ic;
-        while (Character.isDigit(c) || c == '-' || c == '+' || c == '.' || c == 'E' || c == 'e')
-        {
+        while (Character.isDigit(c) || c == '-' || c == '+' || c == '.' || c == 'E' || c == 'e') {
             buf.append(c);
             ic = seqSource.read();
             c = (char) ic;
         }
-        if (ic != -1)
-        {
+        if (ic != -1) {
             seqSource.unread(ic);
         }
         return COSNumber.get(buf.toString());
@@ -959,21 +819,17 @@ public abstract class BaseParser
      * This will read the next string from the stream.
      *
      * @return The string that was read from the stream, never null.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected String readString() throws IOException
-    {
+    protected String readString() throws IOException {
         skipSpaces();
         StringBuilder buffer = new StringBuilder();
         int c = seqSource.read();
-        while( !isEndOfName((char)c) && c != -1 )
-        {
-            buffer.append( (char)c );
+        while (!isEndOfName((char) c) && c != -1) {
+            buffer.append((char) c);
             c = seqSource.read();
         }
-        if (c != -1)
-        {
+        if (c != -1) {
             seqSource.unread(c);
         }
         return buffer.toString();
@@ -984,10 +840,9 @@ public abstract class BaseParser
      *
      * @param expectedString the String value that is expected.
      * @throws IOException if the String char is not the expected value or if an
-     * I/O error occurs.
+     *                     I/O error occurs.
      */
-    protected void readExpectedString(String expectedString) throws IOException
-    {
+    protected void readExpectedString(String expectedString) throws IOException {
         readExpectedString(expectedString.toCharArray(), false);
     }
 
@@ -995,19 +850,16 @@ public abstract class BaseParser
      * Reads given pattern from {@link #seqSource}. Skipping whitespace at start and end if wanted.
      *
      * @param expectedString pattern to be skipped
-     * @param skipSpaces if set to true spaces before and after the string will be skipped
+     * @param skipSpaces     if set to true spaces before and after the string will be skipped
      * @throws IOException if pattern could not be read
      */
-    protected final void readExpectedString(final char[] expectedString, boolean skipSpaces) throws IOException
-    {
+    protected final void readExpectedString(final char[] expectedString, boolean skipSpaces) throws IOException {
         skipSpaces();
-        for (char c : expectedString)
-        {
-            if (seqSource.read() != c)
-            {
+        for (char c : expectedString) {
+            if (seqSource.read() != c) {
                 throw new IOException("Expected string '" + new String(expectedString)
-                    + "' but missed at character '" + c + "' at offset "
-                    + seqSource.getPosition());
+                        + "' but missed at character '" + c + "' at offset "
+                        + seqSource.getPosition());
             }
         }
         skipSpaces();
@@ -1018,13 +870,11 @@ public abstract class BaseParser
      *
      * @param ec the char value that is expected.
      * @throws IOException if the read char is not the expected value or if an
-     * I/O error occurs.
+     *                     I/O error occurs.
      */
-    protected void readExpectedChar(char ec) throws IOException
-    {
+    protected void readExpectedChar(char ec) throws IOException {
         char c = (char) seqSource.read();
-        if (c != ec)
-        {
+        if (c != ec) {
             throw new IOException("expected='" + ec + "' actual='" + c + "' at offset " + seqSource.getPosition());
         }
     }
@@ -1033,13 +883,11 @@ public abstract class BaseParser
      * This will read the next string from the stream up to a certain length.
      *
      * @param length The length to stop reading at.
-     *
      * @return The string that was read from the stream of length 0 to length.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected String readString( int length ) throws IOException
-    {
+    protected String readString(int length) throws IOException {
+        Log.d(TAG, "readString: ");
         skipSpaces();
 
         int c = seqSource.read();
@@ -1047,17 +895,15 @@ public abstract class BaseParser
         //average string size is around 2 and the normal string buffer size is
         //about 16 so lets save some space.
         StringBuilder buffer = new StringBuilder(length);
-        while( !isWhitespace(c) && !isClosing(c) && c != -1 && buffer.length() < length &&
-            c != '[' &&
-            c != '<' &&
-            c != '(' &&
-            c != '/' )
-        {
-            buffer.append( (char)c );
+        while (!isWhitespace(c) && !isClosing(c) && c != -1 && buffer.length() < length &&
+                c != '[' &&
+                c != '<' &&
+                c != '(' &&
+                c != '/') {
+            buffer.append((char) c);
             c = seqSource.read();
         }
-        if (c != -1)
-        {
+        if (c != -1) {
             seqSource.unread(c);
         }
         return buffer.toString();
@@ -1067,11 +913,9 @@ public abstract class BaseParser
      * This will tell if the next character is a closing brace( close of PDF array ).
      *
      * @return true if the next byte is ']', false otherwise.
-     *
      * @throws IOException If an IO error occurs.
      */
-    protected boolean isClosing() throws IOException
-    {
+    protected boolean isClosing() throws IOException {
         return isClosing(seqSource.peek());
     }
 
@@ -1081,8 +925,7 @@ public abstract class BaseParser
      * @param c The character to check against end of line
      * @return true if the next byte is ']', false otherwise.
      */
-    protected boolean isClosing(int c)
-    {
+    protected boolean isClosing(int c) {
         return c == ']';
     }
 
@@ -1092,32 +935,26 @@ public abstract class BaseParser
      * which is an important detail if one wants to unread the line.
      *
      * @return The characters between the current position and the end of the line.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected String readLine() throws IOException
-    {
-        if (seqSource.isEOF())
-        {
-            throw new IOException( "Error: End-of-File, expected line at offset " +
-                seqSource.getPosition());
+    protected String readLine() throws IOException {
+        if (seqSource.isEOF()) {
+            throw new IOException("Error: End-of-File, expected line at offset " +
+                    seqSource.getPosition());
         }
 
-        StringBuilder buffer = new StringBuilder( 11 );
+        StringBuilder buffer = new StringBuilder(11);
 
         int c;
-        while ((c = seqSource.read()) != -1)
-        {
+        while ((c = seqSource.read()) != -1) {
             // CR and LF are valid EOLs
-            if (isEOL(c))
-            {
+            if (isEOL(c)) {
                 break;
             }
-            buffer.append( (char)c );
+            buffer.append((char) c);
         }
         // CR+LF is also a valid EOL 
-        if (isCR(c) && isLF(seqSource.peek()))
-        {
+        if (isCR(c) && isLF(seqSource.peek())) {
             seqSource.read();
         }
         return buffer.toString();
@@ -1127,11 +964,9 @@ public abstract class BaseParser
      * This will tell if the next byte to be read is an end of line byte.
      *
      * @return true if the next byte is 0x0A or 0x0D.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected boolean isEOL() throws IOException
-    {
+    protected boolean isEOL() throws IOException {
         return isEOL(seqSource.peek());
     }
 
@@ -1141,18 +976,15 @@ public abstract class BaseParser
      * @param c The character to check against end of line
      * @return true if the next byte is 0x0A or 0x0D.
      */
-    protected boolean isEOL(int c)
-    {
+    protected boolean isEOL(int c) {
         return isLF(c) || isCR(c);
     }
 
-    private boolean isLF(int c)
-    {
+    private boolean isLF(int c) {
         return ASCII_LF == c;
     }
 
-    private boolean isCR(int c)
-    {
+    private boolean isCR(int c) {
         return ASCII_CR == c;
     }
 
@@ -1160,35 +992,31 @@ public abstract class BaseParser
      * This will tell if the next byte is whitespace or not.
      *
      * @return true if the next byte in the stream is a whitespace character.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected boolean isWhitespace() throws IOException
-    {
+    protected boolean isWhitespace() throws IOException {
         return isWhitespace(seqSource.peek());
     }
 
     /**
      * This will tell if a character is whitespace or not.  These values are
      * specified in table 1 (page 12) of ISO 32000-1:2008.
+     *
      * @param c The character to check against whitespace
      * @return true if the character is a whitespace character.
      */
-    protected boolean isWhitespace( int c )
-    {
-        return c == 0 || c == 9 || c == 12  || c == ASCII_LF
-            || c == ASCII_CR || c == ASCII_SPACE;
+    protected boolean isWhitespace(int c) {
+        return c == 0 || c == 9 || c == 12 || c == ASCII_LF
+                || c == ASCII_CR || c == ASCII_SPACE;
     }
 
     /**
      * This will tell if the next byte is a space or not.
      *
      * @return true if the next byte in the stream is a space character.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected boolean isSpace() throws IOException
-    {
+    protected boolean isSpace() throws IOException {
         return isSpace(seqSource.peek());
     }
 
@@ -1198,8 +1026,7 @@ public abstract class BaseParser
      * @param c The character to check against space
      * @return true if the next byte in the stream is a space character.
      */
-    protected boolean isSpace(int c)
-    {
+    protected boolean isSpace(int c) {
         return ASCII_SPACE == c;
     }
 
@@ -1207,11 +1034,9 @@ public abstract class BaseParser
      * This will tell if the next byte is a digit or not.
      *
      * @return true if the next byte in the stream is a digit.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected boolean isDigit() throws IOException
-    {
+    protected boolean isDigit() throws IOException {
         return isDigit(seqSource.peek());
     }
 
@@ -1221,8 +1046,7 @@ public abstract class BaseParser
      * @param c The character to be checked
      * @return true if the next byte in the stream is a digit.
      */
-    protected static boolean isDigit(int c)
-    {
+    protected static boolean isDigit(int c) {
         return c >= ASCII_ZERO && c <= ASCII_NINE;
     }
 
@@ -1231,28 +1055,21 @@ public abstract class BaseParser
      *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected void skipSpaces() throws IOException
-    {
+    protected void skipSpaces() throws IOException {
         int c = seqSource.read();
         // 37 is the % character, a comment
-        while( isWhitespace(c) || c == 37)
-        {
-            if ( c == 37 )
-            {
+        while (isWhitespace(c) || c == 37) {
+            if (c == 37) {
                 // skip past the comment section
                 c = seqSource.read();
-                while(!isEOL(c) && c != -1)
-                {
+                while (!isEOL(c) && c != -1) {
                     c = seqSource.read();
                 }
-            }
-            else
-            {
+            } else {
                 c = seqSource.read();
             }
         }
-        if (c != -1)
-        {
+        if (c != -1) {
             seqSource.unread(c);
         }
     }
@@ -1265,11 +1082,9 @@ public abstract class BaseParser
      * @return the object number being read.
      * @throws IOException if an I/O error occurs
      */
-    protected long readObjectNumber() throws IOException
-    {
+    protected long readObjectNumber() throws IOException {
         long retval = readLong();
-        if (retval < 0 || retval >= OBJECT_NUMBER_THRESHOLD)
-        {
+        if (retval < 0 || retval >= OBJECT_NUMBER_THRESHOLD) {
             throw new IOException("Object Number '" + retval + "' has more than 10 digits or is negative");
         }
         return retval;
@@ -1278,14 +1093,13 @@ public abstract class BaseParser
     /**
      * This will read a integer from the Stream and throw an {@link IllegalArgumentException} if the integer value
      * has more than the maximum object revision (i.e. : bigger than {@link #GENERATION_NUMBER_THRESHOLD})
+     *
      * @return the generation number being read.
      * @throws IOException if an I/O error occurs
      */
-    protected int readGenerationNumber() throws IOException
-    {
+    protected int readGenerationNumber() throws IOException {
         int retval = readInt();
-        if(retval < 0 || retval > GENERATION_NUMBER_THRESHOLD)
-        {
+        if (retval < 0 || retval > GENERATION_NUMBER_THRESHOLD) {
             throw new IOException("Generation Number '" + retval + "' has more than 5 digits");
         }
         return retval;
@@ -1295,26 +1109,21 @@ public abstract class BaseParser
      * This will read an integer from the stream.
      *
      * @return The integer that was read from the stream.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected int readInt() throws IOException
-    {
+    protected int readInt() throws IOException {
         skipSpaces();
         int retval = 0;
 
         StringBuilder intBuffer = readStringNumber();
 
-        try
-        {
-            retval = Integer.parseInt( intBuffer.toString() );
-        }
-        catch( NumberFormatException e )
-        {
+        try {
+            retval = Integer.parseInt(intBuffer.toString());
+        } catch (NumberFormatException e) {
             seqSource.unread(intBuffer.toString().getBytes(ISO_8859_1));
             throw new IOException("Error: Expected an integer type at offset " +
-                seqSource.getPosition() +
-                ", instead got '" + intBuffer + "'", e);
+                    seqSource.getPosition() +
+                    ", instead got '" + intBuffer + "'", e);
         }
         return retval;
     }
@@ -1324,25 +1133,20 @@ public abstract class BaseParser
      * This will read an long from the stream.
      *
      * @return The long that was read from the stream.
-     *
      * @throws IOException If there is an error reading from the stream.
      */
-    protected long readLong() throws IOException
-    {
+    protected long readLong() throws IOException {
         skipSpaces();
         long retval = 0;
 
         StringBuilder longBuffer = readStringNumber();
 
-        try
-        {
-            retval = Long.parseLong( longBuffer.toString() );
-        }
-        catch( NumberFormatException e )
-        {
+        try {
+            retval = Long.parseLong(longBuffer.toString());
+        } catch (NumberFormatException e) {
             seqSource.unread(longBuffer.toString().getBytes(ISO_8859_1));
-            throw new IOException( "Error: Expected a long type at offset "
-                + seqSource.getPosition() + ", instead got '" + longBuffer + "'", e);
+            throw new IOException("Error: Expected a long type at offset "
+                    + seqSource.getPosition() + ", instead got '" + longBuffer + "'", e);
         }
         return retval;
     }
@@ -1354,21 +1158,17 @@ public abstract class BaseParser
      * @return the token to parse as integer or long by the calling method.
      * @throws IOException throws by the {@link #seqSource} methods.
      */
-    protected final StringBuilder readStringNumber() throws IOException
-    {
+    protected final StringBuilder readStringNumber() throws IOException {
         int lastByte;
         StringBuilder buffer = new StringBuilder();
-        while ((lastByte = seqSource.read()) >= '0' && lastByte <= '9')
-        {
-            buffer.append( (char)lastByte );
-            if (buffer.length() > MAX_LENGTH_LONG)
-            {
+        while ((lastByte = seqSource.read()) >= '0' && lastByte <= '9') {
+            buffer.append((char) lastByte);
+            if (buffer.length() > MAX_LENGTH_LONG) {
                 throw new IOException("Number '" + buffer +
-                    "' is getting too long, stop reading at offset " + seqSource.getPosition());
+                        "' is getting too long, stop reading at offset " + seqSource.getPosition());
             }
         }
-        if( lastByte != -1 )
-        {
+        if (lastByte != -1) {
             seqSource.unread(lastByte);
         }
         return buffer;

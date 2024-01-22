@@ -33,6 +33,8 @@ import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException;
 
 public class PDFParser extends COSParser
 {
+    private static final String TAG = "PDFParser";
+
     /**
      * Constructor.
      * Unrestricted main memory will be used for buffering PDF streams.
@@ -166,6 +168,7 @@ public class PDFParser extends COSParser
      */
     protected void initialParse() throws IOException
     {
+        Log.d(TAG, "initialParse: ");
         COSDictionary trailer = retrieveTrailer();
 
         COSBase base = parseTrailerValuesDynamically(trailer);

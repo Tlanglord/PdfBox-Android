@@ -32,6 +32,9 @@ import com.tom_roush.pdfbox.io.RandomAccessFile;
 
 public class FDFParser extends COSParser
 {
+
+    private static final String TAG = "FDFParser";
+
     /**
      * Constructs parser for given file using memory buffer.
      *
@@ -111,6 +114,8 @@ public class FDFParser extends COSParser
      */
     private void initialParse() throws IOException
     {
+        Log.d(TAG, "initialParse: ");
+
         COSDictionary trailer = null;
         boolean rebuildTrailer = false;
         try
