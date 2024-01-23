@@ -24,12 +24,11 @@ import java.io.OutputStream;
  *
  * @author Ben Litchfield
  */
-public final class COSNull extends COSBase
-{
+public final class COSNull extends COSBase {
     /**
      * The null token.
      */
-    public static final byte[] NULL_BYTES = new byte[] {110, 117, 108, 108}; //"null".getBytes( "ISO-8859-1" );
+    public static final byte[] NULL_BYTES = new byte[]{110, 117, 108, 108}; //"null".getBytes( "ISO-8859-1" );
 
     /**
      * The one null object in the system.
@@ -39,8 +38,7 @@ public final class COSNull extends COSBase
     /**
      * Constructor.
      */
-    private COSNull()
-    {
+    private COSNull() {
         //limit creation to one instance.
     }
 
@@ -52,9 +50,8 @@ public final class COSNull extends COSBase
      * @throws IOException If an error occurs while visiting this object.
      */
     @Override
-    public Object accept( ICOSVisitor visitor ) throws IOException
-    {
-        return visitor.visitFromNull( this );
+    public Object accept(ICOSVisitor visitor) throws IOException {
+        return visitor.visitFromNull(this);
     }
 
     /**
@@ -63,8 +60,7 @@ public final class COSNull extends COSBase
      * @param output The stream to write to.
      * @throws IOException If there is an error writing to the stream.
      */
-    public void writePDF( OutputStream output ) throws IOException
-    {
+    public void writePDF(OutputStream output) throws IOException {
         output.write(NULL_BYTES);
     }
 
@@ -72,8 +68,7 @@ public final class COSNull extends COSBase
      * {@inheritDoc}
      */
     @Override
-    public String toString()
-    {
-        return "COSNull{}";
+    public String toString() {
+        return toCosNameString() + "COSNull{}";
     }
 }

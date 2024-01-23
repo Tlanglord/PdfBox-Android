@@ -107,7 +107,7 @@ public class COSObjectKey implements Comparable<COSObjectKey>
     @Override
     public String toString()
     {
-        return number + " " + generation + " R";
+        return  number + " " + generation + " R";
     }
 
     @Override

@@ -1544,7 +1544,7 @@ public class COSDictionary extends COSBase implements COSUpdateInfo
     {
         try
         {
-            return getDictionaryString(this, new ArrayList<COSBase>());
+            return toCosNameString()+ getDictionaryString(this, new ArrayList<COSBase>());
         }
         catch (IOException e)
         {

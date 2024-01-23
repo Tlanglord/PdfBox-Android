@@ -261,6 +261,6 @@ public final class COSString extends COSBase
     @Override
     public String toString()
     {
-        return "COSString{" + getString() + "}";
+        return toCosNameString() + "COSString{" + getString() + "}";
     }
 }

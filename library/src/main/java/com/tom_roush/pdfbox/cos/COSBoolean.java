@@ -24,26 +24,25 @@ import java.io.OutputStream;
  *
  * @author Ben Litchfield
  */
-public final class COSBoolean extends COSBase
-{
+public final class COSBoolean extends COSBase {
     /**
      * The true boolean token.
      */
-    public static final byte[] TRUE_BYTES = new byte[] { 116, 114, 117, 101 }; // "true".getBytes("ISO-8859-1")
+    public static final byte[] TRUE_BYTES = new byte[]{116, 114, 117, 101}; // "true".getBytes("ISO-8859-1")
     /**
      * The false boolean token.
      */
-    public static final byte[] FALSE_BYTES = new byte[] { 102, 97, 108, 115, 101 }; // "false".getBytes("ISO-8859-1")
+    public static final byte[] FALSE_BYTES = new byte[]{102, 97, 108, 115, 101}; // "false".getBytes("ISO-8859-1")
 
     /**
      * The PDF true value.
      */
-    public static final COSBoolean TRUE = new COSBoolean( true );
+    public static final COSBoolean TRUE = new COSBoolean(true);
 
     /**
      * The PDF false value.
      */
-    public static final COSBoolean FALSE = new COSBoolean( false );
+    public static final COSBoolean FALSE = new COSBoolean(false);
 
     private final boolean value;
 
@@ -52,8 +51,7 @@ public final class COSBoolean extends COSBase
      *
      * @param aValue The boolean value.
      */
-    private COSBoolean(boolean aValue)
-    {
+    private COSBoolean(boolean aValue) {
         value = aValue;
     }
 
@@ -62,8 +60,7 @@ public final class COSBoolean extends COSBase
      *
      * @return The boolean value of this object.
      */
-    public boolean getValue()
-    {
+    public boolean getValue() {
         return value;
     }
 
@@ -72,8 +69,7 @@ public final class COSBoolean extends COSBase
      *
      * @return The boolean value of this object.
      */
-    public Boolean getValueAsObject()
-    {
+    public Boolean getValueAsObject() {
         return value ? Boolean.TRUE : Boolean.FALSE;
     }
 
@@ -81,11 +77,9 @@ public final class COSBoolean extends COSBase
      * This will get the boolean value.
      *
      * @param value Parameter telling which boolean value to get.
-     *
      * @return The single boolean instance that matches the parameter.
      */
-    public static COSBoolean getBoolean( boolean value )
-    {
+    public static COSBoolean getBoolean(boolean value) {
         return value ? TRUE : FALSE;
     }
 
@@ -93,12 +87,10 @@ public final class COSBoolean extends COSBase
      * This will get the boolean value.
      *
      * @param value Parameter telling which boolean value to get.
-     *
      * @return The single boolean instance that matches the parameter.
      */
-    public static COSBoolean getBoolean( Boolean value )
-    {
-        return getBoolean( value.booleanValue() );
+    public static COSBoolean getBoolean(Boolean value) {
+        return getBoolean(value.booleanValue());
     }
 
     /**
@@ -109,8 +101,7 @@ public final class COSBoolean extends COSBase
      * @throws IOException If an error occurs while visiting this object.
      */
     @Override
-    public Object accept(ICOSVisitor  visitor) throws IOException
-    {
+    public Object accept(ICOSVisitor visitor) throws IOException {
         return visitor.visitFromBoolean(this);
     }
 
@@ -120,27 +111,21 @@ public final class COSBoolean extends COSBase
      * @return The string value of this object.
      */
     @Override
-    public String toString()
-    {
-        return String.valueOf( value );
+    public String toString() {
+        return toCosNameString() + String.valueOf(value);
     }
 
     /**
      * This will write this object out to a PDF stream.
      *
      * @param output The stream to write this object out to.
-     *
      * @throws IOException If an error occurs while writing out this object.
      */
-    public void writePDF( OutputStream output ) throws IOException
-    {
-        if( value )
-        {
-            output.write( TRUE_BYTES );
-        }
-        else
-        {
-            output.write( FALSE_BYTES );
+    public void writePDF(OutputStream output) throws IOException {
+        if (value) {
+            output.write(TRUE_BYTES);
+        } else {
+            output.write(FALSE_BYTES);
         }
     }
 }

@@ -183,6 +183,7 @@ public class PDFParser extends COSParser
             root.setItem(COSName.TYPE, COSName.CATALOG);
         }
         // parse all objects, starting at the root dictionary
+        // 解析所有objects
         parseDictObjects(root, (COSName[]) null);
         // parse all objects of the info dictionary
         COSBase infoBase = trailer.getDictionaryObject(COSName.INFO);

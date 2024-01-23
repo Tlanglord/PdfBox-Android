@@ -22,10 +22,8 @@ import java.io.IOException;
  * This class represents a PDF object.
  *
  * @author Ben Litchfield
- *
  */
-public class COSObject extends COSBase implements COSUpdateInfo
-{
+public class COSObject extends COSBase implements COSUpdateInfo {
     private COSBase baseObject;
     private long objectNumber;
     private int generationNumber;
@@ -36,12 +34,10 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * Constructor.
      *
      * @param object The object that this encapsulates.
-     *
      * @throws IOException If there is an error with the object passed in.
      */
-    public COSObject( COSBase object ) throws IOException
-    {
-        setObject( object );
+    public COSObject(COSBase object) throws IOException {
+        setObject(object);
     }
 
     /**
@@ -49,15 +45,12 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * if it is a pdfobjref then it will dereference that and return it.
      *
      * @param key The key to the value that we are searching for.
-     *
      * @return The pdf object that matches the key.
      */
-    public COSBase getDictionaryObject( COSName key )
-    {
-        COSBase retval =null;
-        if( baseObject instanceof COSDictionary )
-        {
-            retval = ((COSDictionary)baseObject).getDictionaryObject( key );
+    public COSBase getDictionaryObject(COSName key) {
+        COSBase retval = null;
+        if (baseObject instanceof COSDictionary) {
+            retval = ((COSDictionary) baseObject).getDictionaryObject(key);
         }
         return retval;
     }
@@ -66,15 +59,12 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * This will get the dictionary object in this object that has the name key.
      *
      * @param key The key to the value that we are searching for.
-     *
      * @return The pdf object that matches the key.
      */
-    public COSBase getItem( COSName key )
-    {
-        COSBase retval =null;
-        if( baseObject instanceof COSDictionary )
-        {
-            retval = ((COSDictionary)baseObject).getItem( key );
+    public COSBase getItem(COSName key) {
+        COSBase retval = null;
+        if (baseObject instanceof COSDictionary) {
+            retval = ((COSDictionary) baseObject).getItem(key);
         }
         return retval;
     }
@@ -84,8 +74,7 @@ public class COSObject extends COSBase implements COSUpdateInfo
      *
      * @return The encapsulated object.
      */
-    public COSBase getObject()
-    {
+    public COSBase getObject() {
         return baseObject;
     }
 
@@ -93,11 +82,9 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * This will set the object that this object encapsulates.
      *
      * @param object The new object to encapsulate.
-     *
      * @throws IOException If there is an error setting the updated object.
      */
-    public final void setObject( COSBase object ) throws IOException
-    {
+    public final void setObject(COSBase object) throws IOException {
         baseObject = object;
     }
 
@@ -107,24 +94,21 @@ public class COSObject extends COSBase implements COSUpdateInfo
      *
      * @return true if dereferencing is in progress.
      */
-    public boolean derefencingInProgress()
-    {
+    public boolean derefencingInProgress() {
         return dereferencingInProgress;
     }
 
     /**
      * Start dereferencing the represented indirect object.
      */
-    public void dereferencingStarted()
-    {
+    public void dereferencingStarted() {
         dereferencingInProgress = true;
     }
 
     /**
      * Dereferencing of the represented indirect object is finished.
      */
-    public void dereferencingFinished()
-    {
+    public void dereferencingFinished() {
         dereferencingInProgress = false;
     }
 
@@ -132,44 +116,43 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * {@inheritDoc}
      */
     @Override
-    public String toString()
-    {
-        return "COSObject{" + objectNumber + ", " + generationNumber + "}";
+    public String toString() {
+        return toCosNameString() + "COSObject{" + objectNumber + ", " + generationNumber + "}";
     }
 
     /**
      * Getter for property objectNumber.
+     *
      * @return Value of property objectNumber.
      */
-    public long getObjectNumber()
-    {
+    public long getObjectNumber() {
         return objectNumber;
     }
 
     /**
      * Setter for property objectNumber.
+     *
      * @param objectNum New value of property objectNumber.
      */
-    public void setObjectNumber(long objectNum)
-    {
+    public void setObjectNumber(long objectNum) {
         objectNumber = objectNum;
     }
 
     /**
      * Getter for property generationNumber.
+     *
      * @return Value of property generationNumber.
      */
-    public int getGenerationNumber()
-    {
+    public int getGenerationNumber() {
         return generationNumber;
     }
 
     /**
      * Setter for property generationNumber.
+     *
      * @param generationNumberValue New value of property generationNumber.
      */
-    public void setGenerationNumber(int generationNumberValue)
-    {
+    public void setGenerationNumber(int generationNumberValue) {
         generationNumber = generationNumberValue;
     }
 
@@ -181,8 +164,7 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * @throws IOException If an error occurs while visiting this object.
      */
     @Override
-    public Object accept( ICOSVisitor visitor ) throws IOException
-    {
+    public Object accept(ICOSVisitor visitor) throws IOException {
         COSBase object = getObject();
         return object != null ? object.accept(visitor) : COSNull.NULL.accept(visitor);
     }
@@ -193,8 +175,7 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * @return the update state.
      */
     @Override
-    public boolean isNeedToBeUpdated()
-    {
+    public boolean isNeedToBeUpdated() {
         return needToBeUpdated;
     }
 
@@ -204,8 +185,7 @@ public class COSObject extends COSBase implements COSUpdateInfo
      * @param flag the update state.
      */
     @Override
-    public void setNeedToBeUpdated(boolean flag)
-    {
+    public void setNeedToBeUpdated(boolean flag) {
         needToBeUpdated = flag;
     }
 

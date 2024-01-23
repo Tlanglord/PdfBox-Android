@@ -525,6 +525,7 @@ public class COSParser extends BaseParser {
     private void addNewToList(final Queue<COSBase> toBeParsedList,
                               final Collection<COSBase> newObjects, final Set<Long> addedObjects) {
         for (COSBase newObject : newObjects) {
+            Log.d(TAG, "addNewToList: newObject: " + newObject);
             addNewToList(toBeParsedList, newObject, addedObjects);
         }
     }
@@ -693,7 +694,7 @@ public class COSParser extends BaseParser {
      */
     protected final COSBase parseObjectDynamically(COSObject obj,
                                                    boolean requireExistingNotCompressedObj) throws IOException {
-        Log.d(TAG, "parseObjectDynamically: ");
+        Log.d(TAG, "parseObjectDynamically: " + obj);
         return parseObjectDynamically(obj.getObjectNumber(),
                 obj.getGenerationNumber(), requireExistingNotCompressedObj);
     }

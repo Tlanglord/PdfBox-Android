@@ -270,7 +270,9 @@ public abstract class BaseParser {
         if (key == null || key.getName().isEmpty()) {
             Log.w("PdfBox-Android", "Empty COSName at offset " + seqSource.getPosition());
         }
+        Log.d(TAG, "parseCOSDictionaryNameValuePair: key:" + key);
         COSBase value = parseCOSDictionaryValue();
+
         skipSpaces();
         if (value == null) {
             Log.w("PdfBox-Android", "Bad dictionary declaration at offset " + seqSource.getPosition());
@@ -282,6 +284,7 @@ public abstract class BaseParser {
             value.setDirect(true);
             obj.setItem(key, value);
         }
+        value.setSelfCosName(key);
         return true;
     }
 

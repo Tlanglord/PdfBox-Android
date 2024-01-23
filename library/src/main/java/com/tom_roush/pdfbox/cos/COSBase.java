@@ -25,15 +25,23 @@ import com.tom_roush.pdfbox.pdmodel.common.COSObjectable;
  *
  * @author Ben Litchfield
  */
-public abstract class COSBase implements COSObjectable
-{
+public abstract class COSBase implements COSObjectable {
     private boolean direct;
+
+    private COSName selfCosName;
+
+    public COSName getSelfCosName() {
+        return selfCosName;
+    }
+
+    public void setSelfCosName(COSName selfCosName) {
+        this.selfCosName = selfCosName;
+    }
 
     /**
      * Constructor.
      */
-    public COSBase()
-    {
+    public COSBase() {
     }
 
     /**
@@ -42,8 +50,7 @@ public abstract class COSBase implements COSObjectable
      * @return The cos object that matches this Java object.
      */
     @Override
-    public COSBase getCOSObject()
-    {
+    public COSBase getCOSObject() {
         return this;
     }
 
@@ -57,13 +64,12 @@ public abstract class COSBase implements COSObjectable
     public abstract Object accept(ICOSVisitor visitor) throws IOException;
 
     /**
-     * If the state is set true, the dictionary will be written direct into the called object. 
+     * If the state is set true, the dictionary will be written direct into the called object.
      * This means, no indirect object will be created.
      *
      * @return the state
      */
-    public boolean isDirect()
-    {
+    public boolean isDirect() {
         return direct;
     }
 
@@ -72,8 +78,12 @@ public abstract class COSBase implements COSObjectable
      *
      * @param direct set it true, for writing direct object
      */
-    public void setDirect(boolean direct)
-    {
+    public void setDirect(boolean direct) {
         this.direct = direct;
+    }
+
+
+    public String toCosNameString() {
+        return selfCosName != null ? "[ "+selfCosName.getName() + " ]=" : "";
     }
 }
