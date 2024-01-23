@@ -360,6 +360,7 @@ public abstract class PDFStreamEngine {
     protected final void processTilingPattern(PDTilingPattern tilingPattern, PDColor color,
                                               PDColorSpace colorSpace, Matrix patternMatrix)
             throws IOException {
+        Log.d(TAG, "processTilingPattern: ");
         PDResources parent = pushResources(tilingPattern);
 
         Matrix parentMatrix = initialMatrix;
@@ -486,6 +487,8 @@ public abstract class PDFStreamEngine {
      * @throws IOException if there is an error reading or parsing the content stream.
      */
     private void processStreamOperators(PDContentStream contentStream) throws IOException {
+        Log.d(TAG, "processStreamOperators: 开始处理流");
+
         List<COSBase> arguments = new ArrayList<COSBase>();
         PDFStreamParser parser = new PDFStreamParser(contentStream);
         Object token = parser.parseNextToken();
@@ -494,10 +497,14 @@ public abstract class PDFStreamEngine {
                 processOperator((Operator) token, arguments);
                 arguments.clear();
             } else {
-                arguments.add((COSBase) token);
+                COSBase cosBase = (COSBase) token;
+                Log.d(TAG, "processStreamOperators: " + cosBase);
+                arguments.add(cosBase);
             }
             token = parser.parseNextToken();
         }
+
+        Log.d(TAG, "processStreamOperators: 处理流结束");
     }
 
     /**
@@ -926,6 +933,7 @@ public abstract class PDFStreamEngine {
      * Pushes the current graphics state to the stack.
      */
     public void saveGraphicsState() {
+        Log.d(TAG, "saveGraphicsState: ");
         graphicsStack.push(graphicsStack.peek().clone());
     }
 
@@ -942,6 +950,7 @@ public abstract class PDFStreamEngine {
      * @return the saved graphics state stack.
      */
     protected final Deque<PDGraphicsState> saveGraphicsStack() {
+        Log.d(TAG, "saveGraphicsStack: ");
         Deque<PDGraphicsState> savedStack = graphicsStack;
         graphicsStack = new ArrayDeque<PDGraphicsState>(1);
         graphicsStack.add(savedStack.peek().clone());

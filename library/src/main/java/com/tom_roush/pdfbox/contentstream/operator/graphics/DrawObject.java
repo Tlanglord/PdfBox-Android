@@ -40,6 +40,7 @@ import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject;
  */
 public final class DrawObject extends GraphicsOperatorProcessor
 {
+    private static final String TAG = "DrawObject";
     @Override
     public void process(Operator operator, List<COSBase> operands) throws IOException
     {
@@ -61,6 +62,7 @@ public final class DrawObject extends GraphicsOperatorProcessor
         }
         else if (xobject instanceof PDImageXObject)
         {
+            Log.d(TAG, "process: PDImageXObject");
             PDImageXObject image = (PDImageXObject)xobject;
             context.drawImage(image);
         }

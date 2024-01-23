@@ -63,6 +63,7 @@ import com.tom_roush.pdfbox.util.filetypedetector.FileTypeDetector;
  */
 public final class PDImageXObject extends PDXObject implements PDImage
 {
+    private static final String TAG = "PDImageXObject";
     private SoftReference<Bitmap> cachedImage;
     private PDColorSpace colorSpace;
 
@@ -113,6 +114,9 @@ public final class PDImageXObject extends PDXObject implements PDImage
         setWidth(width);
         setHeight(height);
         setColorSpace(initColorSpace);
+
+        Log.d(TAG, "PDImageXObject: ");
+
     }
 
     /**

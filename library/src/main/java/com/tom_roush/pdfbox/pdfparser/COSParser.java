@@ -384,6 +384,7 @@ public class COSParser extends BaseParser {
      * @return value of PREV item in dictionary or <code>-1</code> if no such item exists
      */
     private long parseXrefObjStream(long objByteOffset, boolean isStandalone) throws IOException {
+        Log.d(TAG, "parseXrefObjStream: ");
         // ---- parse indirect object head
         long objectNumber = readObjectNumber();
 
@@ -782,7 +783,7 @@ public class COSParser extends BaseParser {
     }
 
     private void parseFileObject(Long offsetOrObjstmObNr, final COSObjectKey objKey, final COSObject pdfObject) throws IOException {
-        Log.d(TAG, "parseFileObject: ");
+        Log.d(TAG, "parseFileObject: "+ objKey);
         // ---- go to object start
         source.seek(offsetOrObjstmObNr);
 
@@ -950,6 +951,7 @@ public class COSParser extends BaseParser {
      *                     length attribute, stream does not end with 'endstream' after data read, stream too short etc.
      */
     protected COSStream parseCOSStream(COSDictionary dic) throws IOException {
+        Log.d(TAG, "parseCOSStream: " + dic);
         COSStream stream = document.createCOSStream(dic);
 
         // read 'stream'; this was already tested in parseObjectsDynamically()
@@ -2214,6 +2216,7 @@ public class COSParser extends BaseParser {
     }
 
     private boolean parseHeader(String headerMarker, String defaultVersion) throws IOException {
+        Log.d(TAG, "parseHeader: ");
         // read first line
         String header = readLine();
         // some pdf-documents are broken and the pdf-version is in one of the following lines
@@ -2287,6 +2290,9 @@ public class COSParser extends BaseParser {
      * @throws IOException If an IO error occurs.
      */
     protected boolean parseXrefTable(long startByteOffset) throws IOException {
+
+        Log.d(TAG, "parseXrefTable: startByteOffset: " + startByteOffset);
+
         if (source.peek() != 'x') {
             return false;
         }
@@ -2388,6 +2394,7 @@ public class COSParser extends BaseParser {
      * @throws IOException if there is an error parsing the stream
      */
     private void parseXrefStream(COSStream stream, long objByteOffset, boolean isStandalone) throws IOException {
+        Log.d(TAG, "parseXrefStream: ");
         // the cross reference stream of a hybrid xref table will be added to the existing one
         // and we must not override the offset and the trailer
         if (isStandalone) {
@@ -2521,6 +2528,9 @@ public class COSParser extends BaseParser {
      * @throws IOException if something went wrong
      */
     private void parseDictionaryRecursive(COSObject dictionaryObject) throws IOException {
+
+        Log.d(TAG, "parseDictionaryRecursive: "+ dictionaryObject);
+
         parseObjectDynamically(dictionaryObject, true);
         if (!(dictionaryObject.getObject() instanceof COSDictionary)) {
             // we can't be lenient here, this is called by prepareDecryption()

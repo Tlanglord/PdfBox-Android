@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.state;
 
+import android.util.Log;
+
 import java.util.List;
 import java.io.IOException;
 import com.tom_roush.pdfbox.contentstream.operator.MissingOperandException;
@@ -34,9 +36,14 @@ import com.tom_roush.pdfbox.contentstream.operator.OperatorProcessor;
  */
 public class Concatenate extends OperatorProcessor
 {
+
+    private static final String TAG = "Concatenate";
+
     @Override
     public void process(Operator operator, List<COSBase> arguments) throws IOException
     {
+        Log.d(TAG, "process: ");
+
         if (arguments.size() < 6)
         {
             throw new MissingOperandException(operator, arguments);

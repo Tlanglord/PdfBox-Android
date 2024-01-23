@@ -713,6 +713,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
 
     @Override
     public void drawImage(PDImage pdImage) throws IOException {
+
+        Log.d(TAG, "drawImage , w=" + pdImage.getWidth() + ", w=" + pdImage.getHeight());
+
         if (pdImage instanceof PDImageXObject &&
                 isHiddenOCG(((PDImageXObject) pdImage).getOptionalContent())) {
             return;
@@ -798,6 +801,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
     }
 
     private void drawBitmap(Bitmap image, AffineTransform at) throws IOException {
+
+        Log.d(TAG, "drawBitmap: " + image.getWidth() + " " + image.getHeight());
+
         setClip();
         AffineTransform imageTransform = new AffineTransform(at);
         int width = image.getWidth();
@@ -814,6 +820,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
             if (transfer instanceof COSArray || transfer instanceof COSDictionary) {
                 image = applyTransferFunction(image, transfer);
             }
+            RectF rectF = new RectF();
+            imageTransform.toMatrix().mapRect(rectF);
+            Log.d(TAG, "drawBitmap: rectF=" + rectF);
 
             canvas.drawBitmap(image, imageTransform.toMatrix(), paint);
         }

@@ -130,23 +130,23 @@ public class MainActivity extends Activity {
             contentStream.showText("Hello World中文");
             contentStream.endText();
 
-//            // Load in the images
-//            InputStream in = assetManager.open("falcon.jpg");
-//            InputStream alpha = assetManager.open("trans.png");
-//
-//            // Draw a green rectangle
+            // Load in the images
+            InputStream in = assetManager.open("falcon.jpg");
+            InputStream alpha = assetManager.open("trans.png");
+
+            // Draw a green rectangle
 //            contentStream.addRect(5, 500, 100, 100);
 //            contentStream.setNonStrokingColor(0, 255, 125);
 //            contentStream.fill();
-//
-//            // Draw the falcon base image
-//            PDImageXObject ximage = JPEGFactory.createFromStream(document, in);
-//            contentStream.drawImage(ximage, 20, 20);
-//
-//            // Draw the red overlay image
-//            Bitmap alphaImage = BitmapFactory.decodeStream(alpha);
-//            PDImageXObject alphaXimage = LosslessFactory.createFromImage(document, alphaImage);
-//            contentStream.drawImage(alphaXimage, 20, 20);
+
+            // Draw the falcon base image
+            PDImageXObject ximage = JPEGFactory.createFromStream(document, in);
+            contentStream.drawImage(ximage, 20, 20);
+
+            // Draw the red overlay image
+            Bitmap alphaImage = BitmapFactory.decodeStream(alpha);
+            PDImageXObject alphaXimage = LosslessFactory.createFromImage(document, alphaImage);
+            contentStream.drawImage(alphaXimage, 20, 20);
 
             // Make sure that the content stream is closed:
             contentStream.close();

@@ -43,6 +43,7 @@ import com.tom_roush.pdfbox.io.ScratchFile;
  */
 public class COSStream extends COSDictionary implements Closeable
 {
+    private static final String TAG = "COSStream";
     private RandomAccess randomAccess;      // backing store, in-memory or on-disk
     private final ScratchFile scratchFile;  // used as a temp buffer during decoding
     private boolean isWriting;              // true if there's an open OutputStream
@@ -67,6 +68,7 @@ public class COSStream extends COSDictionary implements Closeable
      */
     public COSStream(ScratchFile scratchFile)
     {
+        Log.d(TAG, "COSStream: ");
         setInt(COSName.LENGTH, 0);
         this.scratchFile = scratchFile != null ? scratchFile : ScratchFile.getMainMemoryOnlyInstance();
     }

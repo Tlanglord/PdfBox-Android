@@ -43,6 +43,7 @@ import com.tom_roush.pdfbox.pdmodel.common.PDStream;
  */
 public class PDFStreamParser extends BaseParser
 {
+    private static final String TAG = "PDFStreamParser";
     private final List<Object> streamObjects = new ArrayList<Object>( 100 );
 
     private static final int MAX_BIN_CHAR_TEST_LENGTH = 10;
@@ -169,6 +170,7 @@ public class PDFStreamParser extends BaseParser
             case 'n':
                 // null
                 String nullString = readString();
+                Log.d(TAG, "parseNextToken: n , token="+nullString);
                 if( nullString.equals( "null") )
                 {
                     return COSNull.NULL;
@@ -180,6 +182,7 @@ public class PDFStreamParser extends BaseParser
             case 't':
             case 'f':
                 String next = readString();
+                Log.d(TAG, "parseNextToken: t/f , token="+next);
                 if( next.equals( "true" ) )
                 {
                     return COSBoolean.TRUE;
@@ -235,6 +238,7 @@ public class PDFStreamParser extends BaseParser
                 return COSNumber.get(buf.toString());
             case 'B':
                 String nextOperator = readString();
+                Log.d(TAG, "parseNextToken: B , nextOperator="+nextOperator);
                 Operator beginImageOP = Operator.getOperator(nextOperator);
                 if (nextOperator.equals(OperatorName.BEGIN_INLINE_IMAGE))
                 {
@@ -243,6 +247,7 @@ public class PDFStreamParser extends BaseParser
                     Object nextToken = null;
                     while ((nextToken = parseNextToken()) instanceof COSName)
                     {
+                        Log.d(TAG, "parseNextToken: B internal , token="+ nextToken);
                         Object value = parseNextToken();
                         if (!(value instanceof COSBase))
                         {
@@ -267,6 +272,7 @@ public class PDFStreamParser extends BaseParser
                 }
                 return beginImageOP;
             case 'I':
+                Log.d(TAG, "parseNextToken: I");
                 //Special case for ID operator
                 String id = Character.toString((char) seqSource.read()) + (char) seqSource.read();
                 if (!id.equals(OperatorName.BEGIN_INLINE_IMAGE_DATA))
@@ -311,6 +317,7 @@ public class PDFStreamParser extends BaseParser
             default:
                 // we must be an operator
                 String operator = readOperator().trim();
+                Log.d(TAG, "parseNextToken: default="+operator);
                 if (operator.length() > 0)
                 {
                     return Operator.getOperator(operator);
