@@ -40,6 +40,16 @@ import com.tom_roush.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
  * Renders a PDF document to a Bitmap.
  * This class may be overridden in order to perform custom rendering.
  *
+ *
+ * PDFStreamEngine          D  处理绘制 showText unicode : code=79 , codec: O, codeLength=2
+ * PDFStreamEngine          D  showGlyph: 79 , displacement: (0.359, 0.0)
+ * PDFStreamEngine          D  showGlyph: 79 , unicode: l , displacement: (0.359, 0.0)
+ * PDFStreamEngine          D  showGlyph:  -> showFontGlyph
+ * PageDrawer               D  showFontGlyph: 79
+ * PageDrawer               D  drawGlyph2D: 79 0.359 0.0
+ * PageDrawer               D  drawGlyph2D: isContentRendered
+ * PageDrawer               D  drawGlyph2D: renderingMode.isFill
+ *
  * @author John Hewson
  */
 public class PDFRenderer

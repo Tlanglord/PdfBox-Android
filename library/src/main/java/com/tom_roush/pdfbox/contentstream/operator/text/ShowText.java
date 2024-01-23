@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.text;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -32,9 +34,11 @@ import com.tom_roush.pdfbox.cos.COSString;
  */
 public class ShowText extends OperatorProcessor
 {
+    private static final String TAG = "ShowText";
     @Override
     public void process(Operator operator, List<COSBase> arguments) throws IOException
     {
+        Log.d(TAG, "process: ");
         if (arguments.isEmpty())
         {
             // ignore ( )Tj
@@ -51,6 +55,7 @@ public class ShowText extends OperatorProcessor
             // ignore: outside of BT...ET
             return;
         }
+
         COSString string = (COSString) base;
         context.showTextString(string.getBytes());
     }

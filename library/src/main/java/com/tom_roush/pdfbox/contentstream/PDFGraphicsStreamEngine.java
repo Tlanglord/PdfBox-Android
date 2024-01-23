@@ -94,6 +94,8 @@ import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImage;
  * PDFStreamEngine subclass for advanced processing of graphics.
  * This class should be subclassed by end users looking to hook into graphics operations.
  *
+ * PDFStreamEngine 子类用于高级图形处理。此类应该由希望挂钩图形操作的最终用户进行子类化。
+ *
  * @author John Hewson
  */
 public abstract class PDFGraphicsStreamEngine extends PDFStreamEngine

@@ -77,6 +77,8 @@ import com.tom_roush.pdfbox.util.Vector;
  */
 class LegacyPDFStreamEngine extends PDFStreamEngine
 {
+    private static final String TAG = "LegacyPDFStreamEngine";
+
     private int pageRotation;
     private PDRectangle pageSize;
     private Matrix translateMatrix;
@@ -171,6 +173,7 @@ class LegacyPDFStreamEngine extends PDFStreamEngine
         Vector displacement)
         throws IOException
     {
+        Log.d(TAG, "showGlyph: " + unicode + " " + code + " " + displacement.getX() + " " + displacement.getY() + " " + textRenderingMatrix);
         //
         // legacy calculations which were previously in PDFStreamEngine
         //

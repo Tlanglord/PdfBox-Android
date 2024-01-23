@@ -92,11 +92,18 @@ import com.tom_roush.pdfbox.util.Vector;
  * have to subclass {@link PDFRenderer} and override
  * {@link PDFRenderer#createPageDrawer(PageDrawerParameters)}. See the <i>OpaquePDFRenderer.java</i>
  * example in the source code download on how to do this.
+ * <p>
+ * 将 PDF 文档中的页面绘制到 Canvas 上下文中。
+ * 可以进行子类化以提供自定义渲染。
+ * 如果您想要进行自定义图形处理而不是 Canvas 渲染，那么您应该将 PDFGraphicsStreamEngine 子类化。
+ * 子类化 PageDrawer 仅适用于目标是渲染到 Canvas 表面上的情况。
+ * 在这种情况下，您还必须子类化 PDFRenderer 并重写 PDFRenderer.createPageDrawer(PageDrawerParameters)。
+ * 请参阅源代码下载中的 OpaquePDFRenderer.java 示例，了解如何执行此操作
  *
  * @author Ben Litchfield
  */
-public class PageDrawer extends PDFGraphicsStreamEngine
-{
+public class PageDrawer extends PDFGraphicsStreamEngine {
+    private static final String TAG = "PageDrawer";
     // parent document renderer - note: this is needed for not-yet-implemented resource caching
     private final PDFRenderer renderer;
 
@@ -146,11 +153,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     /**
      * Default annotations filter, returns all annotations
      */
-    private AnnotationFilter annotationFilter = new AnnotationFilter()
-    {
+    private AnnotationFilter annotationFilter = new AnnotationFilter() {
         @Override
-        public boolean accept(PDAnnotation annotation)
-        {
+        public boolean accept(PDAnnotation annotation) {
             return true;
         }
     };
@@ -161,14 +166,13 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * @param parameters Parameters for page drawing.
      * @throws IOException If there is an error loading properties from the file.
      */
-    public PageDrawer(PageDrawerParameters parameters) throws IOException
-    {
+    public PageDrawer(PageDrawerParameters parameters) throws IOException {
         super(parameters.getPage());
         this.renderer = parameters.getRenderer();
         this.subsamplingAllowed = parameters.isSubsamplingAllowed();
         this.destination = parameters.getDestination();
         this.imageDownscalingOptimizationThreshold =
-            parameters.getImageDownscalingOptimizationThreshold();
+                parameters.getImageDownscalingOptimizationThreshold();
     }
 
     /**
@@ -176,8 +180,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      *
      * @return the AnnotationFilter
      */
-    public AnnotationFilter getAnnotationFilter()
-    {
+    public AnnotationFilter getAnnotationFilter() {
         return annotationFilter;
     }
 
@@ -188,40 +191,35 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      *
      * @param annotationFilter the AnnotationFilter
      */
-    public void setAnnotationFilter(AnnotationFilter annotationFilter)
-    {
+    public void setAnnotationFilter(AnnotationFilter annotationFilter) {
         this.annotationFilter = annotationFilter;
     }
 
     /**
      * Returns the parent renderer.
      */
-    public final PDFRenderer getRenderer()
-    {
+    public final PDFRenderer getRenderer() {
         return renderer;
     }
 
     /**
      * Returns the underlying Canvas. May be null if drawPage has not yet been called.
      */
-    protected final Canvas getCanvas()
-    {
+    protected final Canvas getCanvas() {
         return canvas;
     }
 
     /**
      * Returns the current line path. This is reset to empty after each fill/stroke.
      */
-    protected final Path getLinePath()
-    {
+    protected final Path getLinePath() {
         return linePath;
     }
 
     /**
      * Sets high-quality rendering hints on the current Canvas.
      */
-    private void setRenderingHints()
-    {
+    private void setRenderingHints() {
 //        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 //            RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 //        graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
@@ -232,13 +230,12 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     /**
      * Draws the page to the requested Canvas.
      *
-     * @param p The paint.
-     * @param c The canvas to draw onto.
+     * @param p        The paint.
+     * @param c        The canvas to draw onto.
      * @param pageSize The size of the page to draw.
      * @throws IOException If there is an IO error while drawing the page.
      */
-    public void drawPage(Paint p, Canvas c, PDRectangle pageSize) throws IOException
-    {
+    public void drawPage(Paint p, Canvas c, PDRectangle pageSize) throws IOException {
         paint = p;
         canvas = c;
         xform = new AffineTransform(canvas.getMatrix());
@@ -259,8 +256,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
         processPage(getPage());
 
-        for (PDAnnotation annotation : getPage().getAnnotations(annotationFilter))
-        {
+        for (PDAnnotation annotation : getPage().getAnnotations(annotationFilter)) {
             showAnnotation(annotation);
         }
         canvas.restore();
@@ -269,8 +265,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 //    void drawTilingPattern(Graphics2D g, PDTilingPattern pattern, PDColorSpace colorSpace,
 //        PDColor color, Matrix patternMatrix) throws IOException TODO: PdfBox-Android
 
-    private float clampColor(float color)
-    {
+    private float clampColor(float color) {
         return color < 0 ? 0 : (color > 1 ? 1 : color);
     }
 
@@ -296,25 +291,20 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * override {@link #showGlyph(Matrix, PDFont, int, Vector) showGlyph()}. See
      * <a href="https://issues.apache.org/jira/browse/PDFBOX-5093">PDFBOX-5093</a> for more.
      */
-    protected final void setClip()
-    {
+    protected final void setClip() {
         Region clippingPath = getGraphicsState().getCurrentClippingPath();
-        if (clippingPath != lastClip)
-        {
+        if (clippingPath != lastClip) {
             // android canvas manage clips with save/restore in a private stack, we can not
             // modify clip casually, so we store current stack size in `lastStackSize` after setting clip,
             // and restore it before next setting
-            if (lastStackSize >= 1)
-            {
+            if (lastStackSize >= 1) {
                 canvas.restoreToCount(lastStackSize);
             }
             lastStackSize = canvas.save();
-            if (!clippingPath.isEmpty())
-            {
+            if (!clippingPath.isEmpty()) {
                 canvas.clipPath(clippingPath.getBoundaryPath());
             }
-            if (initialClip != null)
-            {
+            if (initialClip != null) {
                 // apply the remembered initial clip, but transform it first
                 //TODO see PDFBOX-4583
             }
@@ -323,23 +313,20 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     }
 
     @Override
-    public void beginText() throws IOException
-    {
+    public void beginText() throws IOException {
         setClip();
         beginTextClip();
     }
 
     @Override
-    public void endText() throws IOException
-    {
+    public void endText() throws IOException {
         endTextClip();
     }
 
     /**
      * Begin buffering the text clipping path, if any.
      */
-    private void beginTextClip()
-    {
+    private void beginTextClip() {
         // buffer the text clippings because they represents a single clipping area
         textClippings = new ArrayList<Path>();
     }
@@ -347,20 +334,17 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     /**
      * End buffering the text clipping path, if any.
      */
-    private void endTextClip()
-    {
+    private void endTextClip() {
         PDGraphicsState state = getGraphicsState();
         RenderingMode renderingMode = state.getTextState().getRenderingMode();
 
         // apply the buffered clip as one area
-        if (renderingMode.isClip() && !textClippings.isEmpty())
-        {
+        if (renderingMode.isClip() && !textClippings.isEmpty()) {
             // PDFBOX-4150: this is much faster than using textClippingArea.add(new Area(glyph))
             // https://stackoverflow.com/questions/21519007/fast-union-of-shapes-in-java
             Path path = new Path();
             path.setFillType(Path.FillType.WINDING);
-            for (Path shape : textClippings)
-            {
+            for (Path shape : textClippings) {
                 path.addPath(shape);
             }
             state.intersectClippingPath(path);
@@ -374,51 +358,45 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
     @Override
     protected void showFontGlyph(Matrix textRenderingMatrix, PDFont font, int code,
-        Vector displacement) throws IOException
-    {
+                                 Vector displacement) throws IOException {
+        Log.d(TAG, "showFontGlyph: " + code);
         AffineTransform at = textRenderingMatrix.createAffineTransform();
         at.concatenate(font.getFontMatrix().createAffineTransform());
 
         Glyph2D glyph2D = createGlyph2D(font);
-        try
-        {
+        try {
             drawGlyph2D(glyph2D, font, code, displacement, at);
-        }
-        catch (IOException ex)
-        {
+        } catch (IOException ex) {
             Log.e("PdfBox-Android", "Could not draw glyph for code " + code + " at position (" +
-                at.getTranslateX() + "," + at.getTranslateY() + ")", ex);
+                    at.getTranslateX() + "," + at.getTranslateY() + ")", ex);
         }
     }
 
     /**
      * Render the font using the Glyph2D interface.
      *
-     * @param glyph2D the Glyph2D implementation provided a Path for each glyph
-     * @param font the font
-     * @param code character code
+     * @param glyph2D      the Glyph2D implementation provided a Path for each glyph
+     * @param font         the font
+     * @param code         character code
      * @param displacement the glyph's displacement (advance)
-     * @param at the transformation
+     * @param at           the transformation
      * @throws IOException if something went wrong
      */
     private void drawGlyph2D(Glyph2D glyph2D, PDFont font, int code, Vector displacement,
-        AffineTransform at) throws IOException
-    {
+                             AffineTransform at) throws IOException {
+        Log.d(TAG, "drawGlyph2D: " + code + " " + displacement.getX() + " " + displacement.getY());
         PDGraphicsState state = getGraphicsState();
         RenderingMode renderingMode = state.getTextState().getRenderingMode();
 
         Path path = glyph2D.getPathForCharacterCode(code);
-        if (path != null)
-        {
+        if (path != null) {
             // Stretch non-embedded glyph if it does not match the height/width contained in the PDF.
             // Vertical fonts have zero X displacement, so the following code scales to 0 if we don't skip it.
             // TODO: How should vertical fonts be handled?
-            if (!font.isEmbedded() && !font.isVertical() && !font.isStandard14() && font.hasExplicitWidth(code))
-            {
+            if (!font.isEmbedded() && !font.isVertical() && !font.isStandard14() && font.hasExplicitWidth(code)) {
                 float fontWidth = font.getWidthFromFont(code);
                 if (fontWidth > 0 && // ignore spaces
-                    Math.abs(fontWidth - displacement.getX() * 1000) > 0.0001)
-                {
+                        Math.abs(fontWidth - displacement.getX() * 1000) > 0.0001) {
                     float pdfWidth = displacement.getX() * 1000;
                     at.scale(pdfWidth / fontWidth, 1);
                 }
@@ -428,18 +406,18 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 //            Shape glyph = at.createTransformedShape(path);
             path.transform(at.toMatrix());
 
-            if (isContentRendered())
-            {
-                if (renderingMode.isFill())
-                {
+            if (isContentRendered()) {
+                Log.d(TAG, "drawGlyph2D: isContentRendered");
+                if (renderingMode.isFill()) {
+                    Log.d(TAG, "drawGlyph2D: renderingMode.isFill");
                     paint.setColor(getNonStrokingColor());
                     setClip();
                     paint.setStyle(Paint.Style.FILL);
                     canvas.drawPath(path, paint);
                 }
 
-                if (renderingMode.isStroke())
-                {
+                if (renderingMode.isStroke()) {
+                    Log.d(TAG, "drawGlyph2D: renderingMode.isStroke");
                     paint.setColor(getStrokingColor());
                     setStroke();
                     setClip();
@@ -448,8 +426,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
                 }
             }
 
-            if (renderingMode.isClip())
-            {
+            if (renderingMode.isClip()) {
 //                textClippings.add(glyph); TODO: PdfBox-Android
             }
         }
@@ -457,12 +434,11 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
     @Override
     protected void showType3Glyph(Matrix textRenderingMatrix, PDType3Font font, int code,
-        Vector displacement) throws IOException
-    {
+                                  Vector displacement) throws IOException {
+        Log.d(TAG, "showType3Glyph: " + code);
         PDGraphicsState state = getGraphicsState();
         RenderingMode renderingMode = state.getTextState().getRenderingMode();
-        if (!RenderingMode.NEITHER.equals(renderingMode))
-        {
+        if (!RenderingMode.NEITHER.equals(renderingMode)) {
             super.showType3Glyph(textRenderingMatrix, font, code, displacement);
         }
     }
@@ -474,57 +450,41 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * @return the implementation of the Glyph2D interface for the given font
      * @throws IOException if something went wrong
      */
-    private Glyph2D createGlyph2D(PDFont font) throws IOException
-    {
+    private Glyph2D createGlyph2D(PDFont font) throws IOException {
         Glyph2D glyph2D = fontGlyph2D.get(font);
         // Is there already a Glyph2D for the given font?
-        if (glyph2D != null)
-        {
+        if (glyph2D != null) {
             return glyph2D;
         }
 
-        if (font instanceof PDTrueTypeFont)
-        {
-            PDTrueTypeFont ttfFont = (PDTrueTypeFont)font;
+        if (font instanceof PDTrueTypeFont) {
+            PDTrueTypeFont ttfFont = (PDTrueTypeFont) font;
             glyph2D = new TTFGlyph2D(ttfFont);  // TTF is never null
-        }
-        else if (font instanceof PDType1Font)
-        {
-            PDType1Font pdType1Font = (PDType1Font)font;
+        } else if (font instanceof PDType1Font) {
+            PDType1Font pdType1Font = (PDType1Font) font;
             glyph2D = new Type1Glyph2D(pdType1Font); // T1 is never null
-        }
-        else if (font instanceof PDType1CFont)
-        {
-            PDType1CFont type1CFont = (PDType1CFont)font;
+        } else if (font instanceof PDType1CFont) {
+            PDType1CFont type1CFont = (PDType1CFont) font;
             glyph2D = new Type1Glyph2D(type1CFont);
-        }
-        else if (font instanceof PDType0Font)
-        {
+        } else if (font instanceof PDType0Font) {
             PDType0Font type0Font = (PDType0Font) font;
-            if (type0Font.getDescendantFont() instanceof PDCIDFontType2)
-            {
+            if (type0Font.getDescendantFont() instanceof PDCIDFontType2) {
                 glyph2D = new TTFGlyph2D(type0Font); // TTF is never null
-            }
-            else if (type0Font.getDescendantFont() instanceof PDCIDFontType0)
-            {
+            } else if (type0Font.getDescendantFont() instanceof PDCIDFontType0) {
                 // a Type0 CIDFont contains CFF font
-                PDCIDFontType0 cidType0Font = (PDCIDFontType0)type0Font.getDescendantFont();
+                PDCIDFontType0 cidType0Font = (PDCIDFontType0) type0Font.getDescendantFont();
                 glyph2D = new CIDType0Glyph2D(cidType0Font); // todo: could be null (need incorporate fallback)
             }
-        }
-        else
-        {
+        } else {
             throw new IllegalStateException("Bad font type: " + font.getClass().getSimpleName());
         }
 
         // cache the Glyph2D instance
-        if (glyph2D != null)
-        {
+        if (glyph2D != null) {
             fontGlyph2D.put(font, glyph2D);
         }
 
-        if (glyph2D == null)
-        {
+        if (glyph2D == null) {
             // todo: make sure this never happens
             throw new UnsupportedOperationException("No font for " + font.getName());
         }
@@ -533,8 +493,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     }
 
     @Override
-    public void appendRectangle(PointF p0, PointF p1, PointF p2, PointF p3)
-    {
+    public void appendRectangle(PointF p0, PointF p1, PointF p2, PointF p3) {
         // to ensure that the path is created in the right direction, we have to create
         // it by combining single lines instead of creating a simple rectangle
         linePath.moveTo((float) p0.x, (float) p0.y);
@@ -555,29 +514,25 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
 //    private Paint getStrokingPaint() throws IOException TODO: PdfBox-Android
 
-    private int getStrokingColor() throws IOException
-    {
+    private int getStrokingColor() throws IOException {
         return getColor(getGraphicsState().getStrokingColor());
     }
 
 //    protected final Paint getNonStrokingPaint() throws IOException TODO: PdfBox-Android
 
-    protected final int getNonStrokingColor() throws IOException
-    {
+    protected final int getNonStrokingColor() throws IOException {
         return getColor(getGraphicsState().getNonStrokingColor());
     }
 
     // set stroke based on the current CTM and the current stroke
-    private void setStroke()
-    {
+    private void setStroke() {
         PDGraphicsState state = getGraphicsState();
 
         // apply the CTM
         float lineWidth = transformWidth(state.getLineWidth());
 
         // minimum line width as used by Adobe Reader
-        if (lineWidth < 0.25)
-        {
+        if (lineWidth < 0.25) {
             lineWidth = 0.25f;
         }
 
@@ -585,8 +540,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         // PDFBOX-5168: show an all-zero dash array line invisible like Adobe does
         // must do it here because getDashArray() sets minimum width because of JVM bugs
         float[] dashArray = dashPattern.getDashArray();
-        if (isAllZeroDash(dashArray))
-        {
+        if (isAllZeroDash(dashArray)) {
             return;
         }
         float phaseStart = dashPattern.getPhase();
@@ -597,26 +551,20 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         paint.setStrokeCap(state.getLineCap());
         paint.setStrokeJoin(state.getLineJoin());
         float miterLimit = state.getMiterLimit();
-        if (miterLimit < 1)
-        {
+        if (miterLimit < 1) {
             Log.w("PdfBox-Android", "Miter limit must be >= 1, value " + miterLimit + " is ignored");
             miterLimit = 10;
         }
         paint.setStrokeMiter(miterLimit);
-        if (dashArray != null)
-        {
+        if (dashArray != null) {
             paint.setPathEffect(new DashPathEffect(dashArray, phaseStart));
         }
     }
 
-    private boolean isAllZeroDash(float[] dashArray)
-    {
-        if (dashArray.length > 0)
-        {
-            for (int i = 0; i < dashArray.length; ++i)
-            {
-                if (dashArray[i] != 0)
-                {
+    private boolean isAllZeroDash(float[] dashArray) {
+        if (dashArray.length > 0) {
+            for (int i = 0; i < dashArray.length; ++i) {
+                if (dashArray[i] != 0) {
                     return false;
                 }
             }
@@ -625,36 +573,28 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         return false;
     }
 
-    private float[] getDashArray(PDLineDashPattern dashPattern)
-    {
+    private float[] getDashArray(PDLineDashPattern dashPattern) {
         float[] dashArray = dashPattern.getDashArray();
         int phase = dashPattern.getPhase();
         // avoid empty, infinite and NaN values (PDFBOX-3360)
-        if (dashArray.length == 0 || Float.isInfinite(phase) || Float.isNaN(phase))
-        {
+        if (dashArray.length == 0 || Float.isInfinite(phase) || Float.isNaN(phase)) {
             return null;
         }
-        for (int i = 0; i < dashArray.length; ++i)
-        {
-            if (Float.isInfinite(dashArray[i]) || Float.isNaN(dashArray[i]))
-            {
+        for (int i = 0; i < dashArray.length; ++i) {
+            if (Float.isInfinite(dashArray[i]) || Float.isNaN(dashArray[i])) {
                 return null;
             }
         }
-        for (int i = 0; i < dashArray.length; ++i)
-        {
+        for (int i = 0; i < dashArray.length; ++i) {
             // apply the CTM
             float w = transformWidth(dashArray[i]);
             // minimum line dash width avoids JVM crash,
             // see PDFBOX-2373, PDFBOX-2929, PDFBOX-3204, PDFBOX-3813
             // also avoid 0 in array like "[ 0 1000 ] 0 d", see PDFBOX-3724
-            if (xformScalingFactorX < 0.5f)
-            {
+            if (xformScalingFactorX < 0.5f) {
                 // PDFBOX-4492
                 dashArray[i] = Math.max(w, 0.2f);
-            }
-            else
-            {
+            } else {
                 dashArray[i] = Math.max(w, 0.062f);
             }
         }
@@ -662,10 +602,8 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     }
 
     @Override
-    public void strokePath() throws IOException
-    {
-        if (isContentRendered())
-        {
+    public void strokePath() throws IOException {
+        if (isContentRendered()) {
             setStroke();
             paint.setStyle(Paint.Style.STROKE);
             paint.setColor(getStrokingColor());
@@ -676,8 +614,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     }
 
     @Override
-    public void fillPath(Path.FillType windingRule) throws IOException
-    {
+    public void fillPath(Path.FillType windingRule) throws IOException {
         PDGraphicsState graphicsState = getGraphicsState();
         paint.setColor(getNonStrokingColor());
         setClip();
@@ -690,22 +627,19 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         RectF bounds = new RectF();
         linePath.computeBounds(bounds, true);
         boolean noAntiAlias = isRectangular(linePath) && bounds.width() > 1 &&
-            bounds.height() > 1;
-        if (noAntiAlias)
-        {
+                bounds.height() > 1;
+        if (noAntiAlias) {
             paint.setAntiAlias(false);
         }
 
-        if (isContentRendered())
-        {
+        if (isContentRendered()) {
             paint.setStyle(Paint.Style.FILL);
             canvas.drawPath(linePath, paint);
         }
 
         linePath.reset();
 
-        if (noAntiAlias)
-        {
+        if (noAntiAlias) {
             // JDK 1.7 has a bug where rendering hints are reset by the above call to
             // the setRenderingHint method, so we re-set all hints, see PDFBOX-2302
             setRenderingHints();
@@ -717,8 +651,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     /**
      * Returns true if the given path is rectangular.
      */
-    private boolean isRectangular(Path path)
-    {
+    private boolean isRectangular(Path path) {
         RectF rect = new RectF();
         return path.isRect(rect);
     }
@@ -730,8 +663,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * @throws IOException If there is an IO error while filling the path.
      */
     @Override
-    public void fillAndStrokePath(Path.FillType windingRule) throws IOException
-    {
+    public void fillAndStrokePath(Path.FillType windingRule) throws IOException {
         // Cloning needed because fillPath() resets linePath
         Path path = new Path(linePath);
         fillPath(windingRule);
@@ -740,89 +672,74 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     }
 
     @Override
-    public void clip(Path.FillType windingRule)
-    {
+    public void clip(Path.FillType windingRule) {
         // the clipping path will not be updated until the succeeding painting operator is called
         clipWindingRule = windingRule;
     }
 
     @Override
-    public void moveTo(float x, float y)
-    {
+    public void moveTo(float x, float y) {
         currentPoint.set(x, y);
         linePath.moveTo(x, y);
     }
 
     @Override
-    public void lineTo(float x, float y)
-    {
+    public void lineTo(float x, float y) {
         currentPoint.set(x, y);
         linePath.lineTo(x, y);
     }
 
     @Override
-    public void curveTo(float x1, float y1, float x2, float y2, float x3, float y3)
-    {
+    public void curveTo(float x1, float y1, float x2, float y2, float x3, float y3) {
         currentPoint.set(x3, y3);
         linePath.cubicTo(x1, y1, x2, y2, x3, y3); // TODO: PdfBox-Android check if this should be relative
     }
 
     @Override
-    public PointF getCurrentPoint()
-    {
+    public PointF getCurrentPoint() {
         return currentPoint;
     }
 
     @Override
-    public void closePath()
-    {
+    public void closePath() {
         linePath.close();
     }
 
     @Override
-    public void endPath()
-    {
+    public void endPath() {
 //        TODO: PdfBox-Android adding clipping causes rendering issues
         linePath.reset();
     }
 
     @Override
-    public void drawImage(PDImage pdImage) throws IOException
-    {
+    public void drawImage(PDImage pdImage) throws IOException {
         if (pdImage instanceof PDImageXObject &&
-            isHiddenOCG(((PDImageXObject) pdImage).getOptionalContent()))
-        {
+                isHiddenOCG(((PDImageXObject) pdImage).getOptionalContent())) {
             return;
         }
-        if (!isContentRendered())
-        {
+        if (!isContentRendered()) {
             return;
         }
         Matrix ctm = getGraphicsState().getCurrentTransformationMatrix();
         AffineTransform at = ctm.createAffineTransform();
 
-        if (!pdImage.getInterpolate())
-        {
+        if (!pdImage.getInterpolate()) {
             // if the image is scaled down, we use smooth interpolation, eg PDFBOX-2364
             // only when scaled up do we use nearest neighbour, eg PDFBOX-2302 / mori-cvpr01.pdf
             // PDFBOX-4930: we use the sizes of the ARGB image. These can be different
             // than the original sizes of the base image, when the mask is bigger.
             // PDFBOX-5091: also consider subsampling, the sizes are different too.
             Bitmap bim;
-            if (subsamplingAllowed)
-            {
+            if (subsamplingAllowed) {
                 bim = pdImage.getImage(null, getSubsampling(pdImage, at));
-            }
-            else
-            {
+            } else {
                 bim = pdImage.getImage();
             }
             Matrix m = new Matrix(at);
             boolean isScaledUp = bim.getWidth() < Math.abs(Math.round(m.getScalingFactorX())) ||
-                bim.getHeight() < Math.abs(Math.round(m.getScalingFactorY()));
+                    bim.getHeight() < Math.abs(Math.round(m.getScalingFactorY()));
 
-            if (isScaledUp)
-            {
+            if (isScaledUp) {
 //                graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 //                    RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
             }
@@ -830,29 +747,22 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
         setClip();
 
-        if (pdImage.isStencil())
-        {
+        if (pdImage.isStencil()) {
 //            if (getGraphicsState().getNonStrokingColor().getColorSpace() instanceof PDPattern) TODO: PdfBox-Android
 //            else
 //            TODO: PdfBox-Android draw stenciled Bitmap
-        }
-        else
-        {
-            if (subsamplingAllowed)
-            {
+        } else {
+            if (subsamplingAllowed) {
                 int subsampling = getSubsampling(pdImage, at);
                 // draw the subsampled image
                 drawBitmap(pdImage.getImage(null, subsampling), at);
-            }
-            else
-            {
+            } else {
                 // subsampling not allowed, draw the image
                 drawBitmap(pdImage.getImage(), at);
             }
         }
 
-        if (!pdImage.getInterpolate())
-        {
+        if (!pdImage.getInterpolate()) {
             // JDK 1.7 has a bug where rendering hints are reset by the above call to
             // the setRenderingHint method, so we re-set all hints, see PDFBOX-2302
             setRenderingHints();
@@ -864,26 +774,22 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * and its calculated transform
      *
      * @param pdImage PDImage to be drawn
-     * @param at Transform that will be applied to the image when drawing
+     * @param at      Transform that will be applied to the image when drawing
      * @return The rounded-down ratio of image pixels to drawn pixels. Returned value will always be
      * >=1.
      */
-    private int getSubsampling(PDImage pdImage, AffineTransform at)
-    {
+    private int getSubsampling(PDImage pdImage, AffineTransform at) {
         // calculate subsampling according to the resulting image size
         double scale = Math.abs(at.getDeterminant() * xform.getDeterminant());
 
         int subsampling = (int) Math.floor(Math.sqrt(pdImage.getWidth() * pdImage.getHeight() / scale));
-        if (subsampling > 8)
-        {
+        if (subsampling > 8) {
             subsampling = 8;
         }
-        if (subsampling < 1)
-        {
+        if (subsampling < 1) {
             subsampling = 1;
         }
-        if (subsampling > pdImage.getWidth() || subsampling > pdImage.getHeight())
-        {
+        if (subsampling > pdImage.getWidth() || subsampling > pdImage.getHeight()) {
             // For very small images it is possible that the subsampling would imply 0 size.
             // To avoid problems, the subsampling is set to no less than the smallest dimension.
             subsampling = Math.min(pdImage.getWidth(), pdImage.getHeight());
@@ -891,8 +797,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         return subsampling;
     }
 
-    private void drawBitmap(Bitmap image, AffineTransform at) throws IOException
-    {
+    private void drawBitmap(Bitmap image, AffineTransform at) throws IOException {
         setClip();
         AffineTransform imageTransform = new AffineTransform(at);
         int width = image.getWidth();
@@ -901,16 +806,12 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         imageTransform.translate(0, -height);
 
         PDSoftMask softMask = getGraphicsState().getSoftMask();
-        if( softMask != null )
-        {
+        if (softMask != null) {
             RectF rectangle = new RectF(0, 0, width, height);
 //            Paint awtPaint; TODO: PdfBox-Android
-        }
-        else
-        {
+        } else {
             COSBase transfer = getGraphicsState().getTransfer();
-            if (transfer instanceof COSArray || transfer instanceof COSDictionary)
-            {
+            if (transfer instanceof COSArray || transfer instanceof COSDictionary) {
                 image = applyTransferFunction(image, transfer);
             }
 
@@ -918,8 +819,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         }
     }
 
-    private Bitmap applyTransferFunction(Bitmap image, COSBase transfer) throws IOException
-    {
+    private Bitmap applyTransferFunction(Bitmap image, COSBase transfer) throws IOException {
         Bitmap bim = Bitmap.createBitmap(image.getWidth(), image.getHeight(), Bitmap.Config.ARGB_8888);
         // TODO: Pdfbox-Android - does this always need to be ARGB_8888?
 
@@ -931,8 +831,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         PDFunction rf;
         PDFunction gf;
         PDFunction bf;
-        if (transfer instanceof COSArray)
-        {
+        if (transfer instanceof COSArray) {
             COSArray ar = (COSArray) transfer;
             rf = PDFunction.create(ar.getObject(0));
             gf = PDFunction.create(ar.getObject(1));
@@ -940,9 +839,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
             rMap = new Integer[256];
             gMap = new Integer[256];
             bMap = new Integer[256];
-        }
-        else
-        {
+        } else {
             rf = PDFunction.create(transfer);
             gf = rf;
             bf = rf;
@@ -953,10 +850,8 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
         // apply the transfer function to each color, but keep alpha
         float[] input = new float[1];
-        for (int x = 0; x < image.getWidth(); ++x)
-        {
-            for (int y = 0; y < image.getHeight(); ++y)
-            {
+        for (int x = 0; x < image.getWidth(); ++x) {
+            for (int y = 0; y < image.getHeight(); ++y) {
                 int rgb = image.getPixel(x, y);
                 int ri = (rgb >> 16) & 0xFF;
                 int gi = (rgb >> 8) & 0xFF;
@@ -964,32 +859,23 @@ public class PageDrawer extends PDFGraphicsStreamEngine
                 int ro;
                 int go;
                 int bo;
-                if (rMap[ri] != null)
-                {
+                if (rMap[ri] != null) {
                     ro = rMap[ri];
-                }
-                else
-                {
+                } else {
                     input[0] = (ri & 0xFF) / 255f;
                     ro = (int) (rf.eval(input)[0] * 255);
                     rMap[ri] = ro;
                 }
-                if (gMap[gi] != null)
-                {
+                if (gMap[gi] != null) {
                     go = gMap[gi];
-                }
-                else
-                {
+                } else {
                     input[0] = (gi & 0xFF) / 255f;
                     go = (int) (gf.eval(input)[0] * 255);
                     gMap[gi] = go;
                 }
-                if (bMap[bi] != null)
-                {
+                if (bMap[bi] != null) {
                     bo = bMap[bi];
-                }
-                else
-                {
+                } else {
                     input[0] = (bi & 0xFF) / 255f;
                     bo = (int) (bf.eval(input)[0] * 255);
                     bMap[bi] = bo;
@@ -1001,15 +887,12 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     }
 
     @Override
-    public void shadingFill(COSName shadingName) throws IOException
-    {
-        if (!isContentRendered())
-        {
+    public void shadingFill(COSName shadingName) throws IOException {
+        if (!isContentRendered()) {
             return;
         }
         PDShading shading = getResources().getShading(shadingName);
-        if (shading == null)
-        {
+        if (shading == null) {
             Log.e("PdfBox-Android", "shading " + shadingName + " does not exist in resources dictionary");
             return;
         }
@@ -1024,25 +907,19 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         // need to do it here and not in shading getRaster() because it may have been rotated
         PDRectangle bbox = shading.getBBox();
 //        Area area;
-        if (bbox != null)
-        {
+        if (bbox != null) {
 //            area = new Area(bbox.transform(ctm));
 //            area.intersect(getGraphicsState().getCurrentClippingPath());
-        }
-        else
-        {
+        } else {
             RectF bounds = shading.getBounds(new AffineTransform(), ctm);
-            if (bounds != null)
-            {
-                bounds.union((float)Math.floor(bounds.left - 1),
-                    (float)Math.floor(bounds.top - 1));
-                bounds.union((float)Math.ceil(bounds.right + 1),
-                    (float)Math.ceil(bounds.bottom + 1));
+            if (bounds != null) {
+                bounds.union((float) Math.floor(bounds.left - 1),
+                        (float) Math.floor(bounds.top - 1));
+                bounds.union((float) Math.ceil(bounds.right + 1),
+                        (float) Math.ceil(bounds.bottom + 1));
 //                area = new Area(bounds);
 //                area.intersect(getGraphicsState().getCurrentClippingPath());
-            }
-            else
-            {
+            } else {
 //                area = getGraphicsState().getCurrentClippingPath();
             }
         }
@@ -1051,50 +928,41 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     }
 
     @Override
-    public void showAnnotation(PDAnnotation annotation) throws IOException
-    {
+    public void showAnnotation(PDAnnotation annotation) throws IOException {
         lastClip = null;
         // Device checks shouldn't be needed
-        if (annotation.isNoView())
-        {
+        if (annotation.isNoView()) {
             return;
         }
-        if (annotation.isHidden())
-        {
+        if (annotation.isHidden()) {
             return;
         }
-        if (annotation.isInvisible() && annotation instanceof PDAnnotationUnknown)
-        {
+        if (annotation.isInvisible() && annotation instanceof PDAnnotationUnknown) {
             // "If set, do not display the annotation if it does not belong to one
             // of the standard annotation types and no annotation handler is available."
             return;
         }
         //TODO support NoZoom, example can be found in p5 of PDFBOX-2348
 
-        if (isHiddenOCG(annotation.getOptionalContent()))
-        {
+        if (isHiddenOCG(annotation.getOptionalContent())) {
             return;
         }
 
         PDAppearanceDictionary appearance = annotation.getAppearance();
-        if (appearance == null || appearance.getNormalAppearance() == null)
-        {
+        if (appearance == null || appearance.getNormalAppearance() == null) {
             annotation.constructAppearances(renderer.document);
         }
 
-        if (annotation.isNoRotate() && getCurrentPage().getRotation() != 0)
-        {
+        if (annotation.isNoRotate() && getCurrentPage().getRotation() != 0) {
             PDRectangle rect = annotation.getRectangle();
             android.graphics.Matrix savedTransform = canvas.getMatrix();
             // "The upper-left corner of the annotation remains at the same point in
             //  default user space; the annotation pivots around that point."
             canvas.rotate(getCurrentPage().getRotation(),
-                rect.getLowerLeftX(), rect.getUpperRightY());
+                    rect.getLowerLeftX(), rect.getUpperRightY());
             super.showAnnotation(annotation);
             canvas.setMatrix(savedTransform);
-        }
-        else
-        {
+        } else {
             super.showAnnotation(annotation);
         }
     }
@@ -1103,14 +971,11 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * {@inheritDoc}
      */
     @Override
-    public void showForm(PDFormXObject form) throws IOException
-    {
-        if (isHiddenOCG(form.getOptionalContent()))
-        {
+    public void showForm(PDFormXObject form) throws IOException {
+        if (isHiddenOCG(form.getOptionalContent())) {
             return;
         }
-        if (isContentRendered())
-        {
+        if (isContentRendered()) {
             Path savedLinePath = new Path(linePath);
             linePath = new Path();
             super.showForm(form);
@@ -1118,21 +983,18 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         }
     }
 
-    public void setStroke(Paint p, float width, Paint.Cap cap, Paint.Join join, float miterLimit, float[] dash, float dash_phase)
-    {
+    public void setStroke(Paint p, float width, Paint.Cap cap, Paint.Join join, float miterLimit, float[] dash, float dash_phase) {
         p.setStrokeWidth(width);
         p.setStrokeCap(cap);
         p.setStrokeJoin(join);
         p.setStrokeMiter(miterLimit);
-        if(dash != null)
-        {
+        if (dash != null) {
             p.setPathEffect(new DashPathEffect(dash, dash_phase));
         }
     }
 
     @Override
-    public void showTransparencyGroup(PDTransparencyGroup form) throws IOException
-    {
+    public void showTransparencyGroup(PDTransparencyGroup form) throws IOException {
         showTransparencyGroupOnCanvas(form, canvas);
     }
 
@@ -1144,22 +1006,19 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * @throws IOException
      */
     protected void showTransparencyGroupOnCanvas(PDTransparencyGroup form, Canvas canvas)
-        throws IOException
-    {
-        if (isHiddenOCG(form.getOptionalContent()))
-        {
+            throws IOException {
+        if (isHiddenOCG(form.getOptionalContent())) {
             return;
         }
-        if (!isContentRendered())
-        {
+        if (!isContentRendered()) {
             return;
         }
         TransparencyGroup group =
-            new TransparencyGroup(form, false, getGraphicsState().getCurrentTransformationMatrix(), null);
+                new TransparencyGroup(form, false, getGraphicsState().getCurrentTransformationMatrix(), null);
 //        Bitmap image = group.getImage();
 //        if (image == null)
 //        {
-            // image is empty, don't bother
+        // image is empty, don't bother
 //            return;
 //        }
 
@@ -1179,28 +1038,22 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 //        float x = bbox.getLowerLeftX() - pageSize.getLowerLeftX();
 //        float y = pageSize.getUpperRightY() - bbox.getUpperRightY();
 
-        if (flipTG)
-        {
+        if (flipTG) {
 //            graphics.translate(0, image.getHeight());
 //            graphics.scale(1, -1);
-        }
-        else
-        {
+        } else {
 //            graphics.translate(x * xformScalingFactorX, y * xformScalingFactorY);
         }
 
         PDSoftMask softMask = getGraphicsState().getSoftMask();
-        if (softMask != null)
-        {
+        if (softMask != null) {
 //            Paint awtPaint = new TexturePaint(image,
 //                new Rectangle2D.Float(0, 0, image.getWidth(), image.getHeight()));
 //            awtPaint = applySoftMaskToPaint(awtPaint, softMask);
 //            graphics.setPaint(awtPaint);
 //            graphics.fill(
 //                new Rectangle2D.Float(0, 0, bbox.getWidth() * xformScalingFactorX, bbox.getHeight() * xformScalingFactorY));
-        }
-        else
-        {
+        } else {
 //            try
 //            {
 //                graphics.drawImage(image, null, null);
@@ -1218,8 +1071,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
     /**
      * Transparency group.
      **/
-    private final class TransparencyGroup
-    {
+    private final class TransparencyGroup {
 //        private final Bitmap image;
 //        private final PDRectangle bbox;
 
@@ -1233,18 +1085,17 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         /**
          * Creates a buffered image for a transparency group result.
          *
-         * @param form the transparency group of the form or soft mask.
-         * @param isSoftMask true if this is a soft mask.
-         * @param ctm the relevant current transformation matrix. For soft masks, this is the CTM at
-         * the time the soft mask is set (not at the time the soft mask is used for fill/stroke!),
-         * for forms, this is the CTM at the time the form is invoked.
+         * @param form          the transparency group of the form or soft mask.
+         * @param isSoftMask    true if this is a soft mask.
+         * @param ctm           the relevant current transformation matrix. For soft masks, this is the CTM at
+         *                      the time the soft mask is set (not at the time the soft mask is used for fill/stroke!),
+         *                      for forms, this is the CTM at the time the form is invoked.
          * @param backdropColor the color according to the /bc entry to be used for luminosity soft
-         * masks.
+         *                      masks.
          * @throws IOException
          */
         private TransparencyGroup(PDTransparencyGroup form, boolean isSoftMask, Matrix ctm,
-            PDColor backdropColor) throws IOException
-        {
+                                  PDColor backdropColor) throws IOException {
 //            Graphics2D savedGraphics = graphics;
 //            Area savedLastClip = lastClip;
 //            Shape savedInitialClip = initialClip;
@@ -1254,8 +1105,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
             // transform the bbox
             PDRectangle formBBox = form.getBBox();
-            if (formBBox == null)
-            {
+            if (formBBox == null) {
                 // PDFBOX-5471
                 // check done here and not in caller to avoid getBBox() creating rectangle twice
                 Log.w("PdfBox-Android", "transparency group ignored because BBox is null");
@@ -1296,40 +1146,30 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 //            height = maxY - minY;
 
             // FIXME - color space
-            if (isGray(form.getGroup().getColorSpace(form.getResources())))
-            {
+            if (isGray(form.getGroup().getColorSpace(form.getResources()))) {
 //                image = create2ByteGrayAlphaImage(width, height);
-            }
-            else
-            {
+            } else {
 //                image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             }
 //            Graphics2D g = image.createGraphics();
 
             boolean needsBackdrop = !isSoftMask && !form.getGroup().isIsolated() &&
-                hasBlendMode(form, new HashSet<COSBase>());
+                    hasBlendMode(form, new HashSet<COSBase>());
             Bitmap backdropImage = null;
             // Position of this group in parent group's coordinates
             int backdropX = 0;
             int backdropY = 0;
-            if (needsBackdrop)
-            {
-                if (transparencyGroupStack.isEmpty())
-                {
+            if (needsBackdrop) {
+                if (transparencyGroupStack.isEmpty()) {
                     // Use the current page as the parent group.
                     backdropImage = renderer.getPageImage();
-                    if (backdropImage == null)
-                    {
+                    if (backdropImage == null) {
                         needsBackdrop = false;
-                    }
-                    else
-                    {
+                    } else {
 //                        backdropX = minX;
 //                        backdropY = backdropImage.getHeight() - maxY;
                     }
-                }
-                else
-                {
+                } else {
                     TransparencyGroup parentGroup = transparencyGroupStack.peek();
 //                    backdropImage = parentGroup.image;
 //                    backdropX = minX - parentGroup.minX;
@@ -1338,15 +1178,13 @@ public class PageDrawer extends PDFGraphicsStreamEngine
             }
 
 //            Graphics2D g = image.createGraphics();
-            if (needsBackdrop)
-            {
+            if (needsBackdrop) {
                 // backdropImage must be included in group image but not in group alpha.
 //                g.drawImage(backdropImage, 0, 0, width, height,
 //                    backdropX, backdropY, backdropX + width, backdropY + height, null);
 //                g = new GroupGraphics(image, g);
             }
-            if (isSoftMask && backdropColor != null)
-            {
+            if (isSoftMask && backdropColor != null) {
                 // "If the subtype is Luminosity, the transparency group XObject G shall be
                 // composited with a fully opaque backdrop whose colour is everywhere defined
                 // by the soft-mask dictionary's BC entry."
@@ -1380,29 +1218,21 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 
 //            graphics = g;
             setRenderingHints();
-            try
-            {
-                if (isSoftMask)
-                {
+            try {
+                if (isSoftMask) {
                     processSoftMask(form);
-                }
-                else
-                {
+                } else {
                     transparencyGroupStack.push(this);
                     processTransparencyGroup(form);
-                    if (!transparencyGroupStack.isEmpty())
-                    {
+                    if (!transparencyGroupStack.isEmpty()) {
                         transparencyGroupStack.pop();
                     }
                 }
 
-                if (needsBackdrop)
-                {
+                if (needsBackdrop) {
 //                    ((GroupGraphics) graphics).removeBackdrop(backdropImage, backdropX, backdropY);
                 }
-            }
-            finally
-            {
+            } finally {
                 flipTG = savedFlipTG;
 //                lastClip = savedLastClip;
 //                graphics.dispose();
@@ -1418,20 +1248,14 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         // http://stackoverflow.com/a/21181943/535646
 //        private BufferedImage create2ByteGrayAlphaImage(int width, int height) TODO: PdfBox-Android
 
-        private boolean isGray(PDColorSpace colorSpace)
-        {
-            if (colorSpace instanceof PDDeviceGray)
-            {
+        private boolean isGray(PDColorSpace colorSpace) {
+            if (colorSpace instanceof PDDeviceGray) {
                 return true;
             }
-            if (colorSpace instanceof PDICCBased)
-            {
-                try
-                {
+            if (colorSpace instanceof PDICCBased) {
+                try {
                     return ((PDICCBased) colorSpace).getAlternateColorSpace() instanceof PDDeviceGray;
-                }
-                catch (IOException ex)
-                {
+                } catch (IOException ex) {
                     return false;
                 }
             }
@@ -1445,49 +1269,38 @@ public class PageDrawer extends PDFGraphicsStreamEngine
 //        RectF getBounds()
     }
 
-    private boolean hasBlendMode(PDTransparencyGroup group, Set<COSBase> groupsDone)
-    {
-        if (groupsDone.contains(group.getCOSObject()))
-        {
+    private boolean hasBlendMode(PDTransparencyGroup group, Set<COSBase> groupsDone) {
+        if (groupsDone.contains(group.getCOSObject())) {
             // The group was already processed. Avoid endless recursion.
             return false;
         }
         groupsDone.add(group.getCOSObject());
 
         PDResources resources = group.getResources();
-        if (resources == null)
-        {
+        if (resources == null) {
             return false;
         }
-        for (COSName name : resources.getExtGStateNames())
-        {
+        for (COSName name : resources.getExtGStateNames()) {
             PDExtendedGraphicsState extGState = resources.getExtGState(name);
-            if (extGState == null)
-            {
+            if (extGState == null) {
                 continue;
             }
             BlendMode blendMode = extGState.getBlendMode();
-            if (blendMode != BlendMode.NORMAL)
-            {
+            if (blendMode != BlendMode.NORMAL) {
                 return true;
             }
         }
 
         // Recursively process nested transparency groups
-        for (COSName name : resources.getXObjectNames())
-        {
+        for (COSName name : resources.getXObjectNames()) {
             PDXObject xObject;
-            try
-            {
+            try {
                 xObject = resources.getXObject(name);
-            }
-            catch (IOException ex)
-            {
+            } catch (IOException ex) {
                 continue;
             }
             if (xObject instanceof PDTransparencyGroup &&
-                hasBlendMode((PDTransparencyGroup)xObject, groupsDone))
-            {
+                    hasBlendMode((PDTransparencyGroup) xObject, groupsDone)) {
                 return true;
             }
         }
@@ -1499,19 +1312,15 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * {@inheritDoc}
      */
     @Override
-    public void beginMarkedContentSequence(COSName tag, COSDictionary properties)
-    {
-        if (nestedHiddenOCGCount > 0)
-        {
+    public void beginMarkedContentSequence(COSName tag, COSDictionary properties) {
+        if (nestedHiddenOCGCount > 0) {
             nestedHiddenOCGCount++;
             return;
         }
-        if (tag == null || getPage().getResources() == null)
-        {
+        if (tag == null || getPage().getResources() == null) {
             return;
         }
-        if (isHiddenOCG(getPage().getResources().getProperties(tag)))
-        {
+        if (isHiddenOCG(getPage().getResources().getProperties(tag))) {
             nestedHiddenOCGCount = 1;
         }
     }
@@ -1520,93 +1329,69 @@ public class PageDrawer extends PDFGraphicsStreamEngine
      * {@inheritDoc}
      */
     @Override
-    public void endMarkedContentSequence()
-    {
-        if (nestedHiddenOCGCount > 0)
-        {
+    public void endMarkedContentSequence() {
+        if (nestedHiddenOCGCount > 0) {
             nestedHiddenOCGCount--;
         }
     }
 
-    private boolean isContentRendered()
-    {
+    private boolean isContentRendered() {
         return nestedHiddenOCGCount <= 0;
     }
 
-    private boolean isHiddenOCG(PDPropertyList propertyList)
-    {
-        if (propertyList instanceof PDOptionalContentGroup)
-        {
+    private boolean isHiddenOCG(PDPropertyList propertyList) {
+        if (propertyList instanceof PDOptionalContentGroup) {
             PDOptionalContentGroup group = (PDOptionalContentGroup) propertyList;
             RenderState printState = group.getRenderState(destination);
-            if (printState == null)
-            {
-                if (!getRenderer().isGroupEnabled(group))
-                {
+            if (printState == null) {
+                if (!getRenderer().isGroupEnabled(group)) {
                     return true;
                 }
-            }
-            else if (RenderState.OFF.equals(printState))
-            {
+            } else if (RenderState.OFF.equals(printState)) {
                 return true;
             }
-        }
-        else if (propertyList instanceof PDOptionalContentMembershipDictionary)
-        {
+        } else if (propertyList instanceof PDOptionalContentMembershipDictionary) {
             return isHiddenOCMD((PDOptionalContentMembershipDictionary) propertyList);
         }
         return false;
     }
 
-    private boolean isHiddenOCMD(PDOptionalContentMembershipDictionary ocmd)
-    {
-        if (ocmd.getCOSObject().getCOSArray(COSName.VE) != null)
-        {
+    private boolean isHiddenOCMD(PDOptionalContentMembershipDictionary ocmd) {
+        if (ocmd.getCOSObject().getCOSArray(COSName.VE) != null) {
             // support seems to be optional, and is approximated by /P and /OCGS
             Log.i("PdfBox-Android", "/VE entry ignored in Optional Content Membership Dictionary");
         }
         List<PDPropertyList> oCGs = ocmd.getOCGs();
-        if (oCGs.isEmpty())
-        {
+        if (oCGs.isEmpty()) {
             return false;
         }
         List<Boolean> visibles = new ArrayList<Boolean>();
-        for (PDPropertyList prop : oCGs)
-        {
+        for (PDPropertyList prop : oCGs) {
             visibles.add(!isHiddenOCG(prop));
         }
         COSName visibilityPolicy = ocmd.getVisibilityPolicy();
         // visible if any of the entries in OCGs are OFF
-        if (COSName.ANY_OFF.equals(visibilityPolicy))
-        {
-            for (boolean visible : visibles)
-            {
-                if (!visible)
-                {
+        if (COSName.ANY_OFF.equals(visibilityPolicy)) {
+            for (boolean visible : visibles) {
+                if (!visible) {
                     return false;
                 }
             }
             return true;
         }
         // visible only if all of the entries in OCGs are ON
-        if (COSName.ALL_ON.equals(visibilityPolicy))
-        {
-            for (boolean visible : visibles)
-            {
-                if (!visible)
-                {
+        if (COSName.ALL_ON.equals(visibilityPolicy)) {
+            for (boolean visible : visibles) {
+                if (!visible) {
                     return true;
                 }
             }
             return false;
         }
         // visible only if all of the entries in OCGs are OFF
-        if (COSName.ALL_OFF.equals(visibilityPolicy))
-        {
-            for (boolean visible : visibles)
-            {
-                if (visible)
-                {
+        if (COSName.ALL_OFF.equals(visibilityPolicy)) {
+            for (boolean visible : visibles) {
+                if (visible) {
                     return true;
                 }
             }
@@ -1614,10 +1399,8 @@ public class PageDrawer extends PDFGraphicsStreamEngine
         }
         // visible if any of the entries in OCGs are ON
         // AnyOn is default
-        for (boolean visible : visibles)
-        {
-            if (visible)
-            {
+        for (boolean visible : visibles) {
+            if (visible) {
                 return false;
             }
         }
