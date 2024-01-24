@@ -760,8 +760,13 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
                 // draw the subsampled image
                 drawBitmap(pdImage.getImage(null, subsampling), at);
             } else {
+
+                Log.d(TAG, "drawImage: 画 bitmap 开始");
+                
                 // subsampling not allowed, draw the image
                 drawBitmap(pdImage.getImage(), at);
+
+                Log.d(TAG, "drawImage: 画 bitmap 结束");
             }
         }
 

@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.pdmodel;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
@@ -48,6 +50,7 @@ import com.tom_roush.pdfbox.pdmodel.graphics.PDXObject;
  */
 public final class PDResources implements COSObjectable
 {
+    private static final String TAG = "PDResources";
     private final COSDictionary resources;
     private final ResourceCache cache;
 
@@ -418,6 +421,7 @@ public final class PDResources implements COSObjectable
         }
         else if (value instanceof COSObject)
         {
+            Log.d(TAG, "getXObject:  value instanceof COSObject");
             xobject = PDXObject.createXObject(((COSObject) value).getObject(), this);
         }
         else

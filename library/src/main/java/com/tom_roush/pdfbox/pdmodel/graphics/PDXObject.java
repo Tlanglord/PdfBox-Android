@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.pdmodel.graphics;
 
+import android.util.Log;
+
 import java.io.IOException;
 
 import com.tom_roush.pdfbox.cos.COSBase;
@@ -39,6 +41,7 @@ import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject;
  */
 public class PDXObject implements COSObjectable
 {
+    private static final String TAG = "PDXObject";
     private final PDStream stream;
 
     /**
@@ -51,6 +54,9 @@ public class PDXObject implements COSObjectable
      */
     public static PDXObject createXObject(COSBase base, PDResources resources) throws IOException
     {
+
+        Log.d(TAG, "createXObject: ");
+
         if (base == null)
         {
             // TODO throw an exception?
@@ -67,6 +73,7 @@ public class PDXObject implements COSObjectable
 
         if (COSName.IMAGE.getName().equals(subtype))
         {
+            Log.d(TAG, "createXObject: is IMAGE");
             return new PDImageXObject(new PDStream(stream), resources);
         }
         else if (COSName.FORM.getName().equals(subtype))

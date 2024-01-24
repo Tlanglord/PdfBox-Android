@@ -272,6 +272,7 @@ public class COSStream extends COSDictionary implements Closeable
         }
         IOUtils.closeQuietly(randomAccess);
         randomAccess = scratchFile.createBuffer();
+        Log.d(TAG, "createRawOutputStream: 创建buffer ， randomAccess" +randomAccess);
         OutputStream out = new RandomAccessOutputStream(randomAccess);
         isWriting = true;
         return new FilterOutputStream(out)
@@ -288,6 +289,7 @@ public class COSStream extends COSDictionary implements Closeable
                 super.close();
                 setInt(COSName.LENGTH, (int)randomAccess.length());
                 isWriting = false;
+                Log.d(TAG, "close: 写完成");
             }
         };
     }

@@ -43,6 +43,8 @@ import com.tom_roush.pdfbox.pdmodel.graphics.color.PDColorSpace;
  */
 final class SampledImageReader
 {
+    private static final String TAG = "SampledImageReader";
+
     private SampledImageReader()
     {
     }
@@ -176,6 +178,9 @@ final class SampledImageReader
     public static Bitmap getRGBImage(PDImage pdImage, Rect region, int subsampling,
         COSArray colorKey) throws IOException
     {
+
+        Log.d(TAG, "getRGBImage: 解析bitmap 开始");
+
         if (pdImage.isEmpty())
         {
             throw new IOException("Image stream is empty");
@@ -188,6 +193,8 @@ final class SampledImageReader
         final int width = (int) Math.ceil(clipped.width() / subsampling);
         final int height = (int) Math.ceil(clipped.height() / subsampling);
         final int bitsPerComponent = pdImage.getBitsPerComponent();
+
+        Log.d(TAG, "getRGBImage:  image.suffix="+ pdImage.getSuffix());
 
         if (width <= 0 || height <= 0 || pdImage.getWidth() <= 0 || pdImage.getHeight() <= 0)
         {
@@ -210,6 +217,7 @@ final class SampledImageReader
             final float[] decode = getDecodeArray(pdImage);
             if (pdImage.getSuffix() != null && pdImage.getSuffix().equals("jpg") && subsampling == 1)
             {
+                Log.d(TAG, "getRGBImage: 解析jpg");
                 return BitmapFactory.decodeStream(pdImage.createInputStream());
             }
             else if (bitsPerComponent == 8 && colorKey == null && Arrays.equals(decode, defaultDecode))

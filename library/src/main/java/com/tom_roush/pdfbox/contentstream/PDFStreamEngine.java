@@ -880,6 +880,7 @@ public abstract class PDFStreamEngine {
      */
     protected void processOperator(Operator operator, List<COSBase> operands) throws IOException {
         String name = operator.getName();
+        Log.d(TAG, "processOperator: " + name + " , operands: " + operands.size());
         OperatorProcessor processor = operators.get(name);
         if (processor != null) {
             processor.setContext(this);

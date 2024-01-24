@@ -308,7 +308,7 @@ public class COSParser extends BaseParser {
             // save current position as well due to skipped spaces
             prevSet.add(source.getPosition());
             int peek = source.peek();
-            Log.d(TAG, "parseXref: peek: " + (char)peek);
+            Log.d(TAG, "parseXref: peek: " + (char) peek);
             // -- parse xref
             if (peek == X) {
                 // xref table and trailer
@@ -783,13 +783,15 @@ public class COSParser extends BaseParser {
     }
 
     private void parseFileObject(Long offsetOrObjstmObNr, final COSObjectKey objKey, final COSObject pdfObject) throws IOException {
-        Log.d(TAG, "parseFileObject: "+ objKey);
+        Log.d(TAG, "parseFileObject: " + objKey);
         // ---- go to object start
         source.seek(offsetOrObjstmObNr);
 
         // ---- we must have an indirect object
         final long readObjNr = readObjectNumber();
+        Log.d(TAG, "parseFileObject: readObjNr: " + readObjNr);
         final int readObjGen = readGenerationNumber();
+        Log.d(TAG, "parseFileObject: readObjGen: " + readObjGen);
         readExpectedString(OBJ_MARKER, true);
 
         // ---- consistency check
@@ -801,7 +803,12 @@ public class COSParser extends BaseParser {
 
         skipSpaces();
         COSBase pb = parseDirObject();
+
+        Log.d(TAG, "parseFileObject: pb: " + pb);
+
         String endObjectKey = readString();
+
+        Log.d(TAG, "parseFileObject: endObjectKey: " + endObjectKey);
 
         if (endObjectKey.equals(STREAM_STRING)) {
             source.rewind(endObjectKey.getBytes(ISO_8859_1).length);
@@ -944,6 +951,8 @@ public class COSParser extends BaseParser {
      * means we copy stream data without testing for 'endstream' or 'endobj' and thus it is no
      * problem if these keywords occur within stream. We require 'endstream' to be found after
      * stream data is read.
+     * <p>
+     * 解析stream内容 ，在PDFParse阶段解析会不会导致卡顿？？
      *
      * @param dic dictionary that goes with this stream.
      * @return parsed pdf stream.
@@ -974,11 +983,26 @@ public class COSParser extends BaseParser {
 
         // get output stream to copy data to
         if (streamLengthObj != null && validateStreamLength(streamLengthObj.longValue())) {
+            Log.d(TAG, "parseCOSStream: 读文件开始 ，创建stream");
             OutputStream out = stream.createRawOutputStream();
             try {
+                Log.d(TAG, "parseCOSStream: 开始读文件");
                 readValidStream(out, streamLengthObj);
             } finally {
                 out.close();
+
+                try {
+                    if (streamLengthObj.longValue() <= 2048) {
+                        int n = (int) streamLengthObj.longValue();
+                        byte[] bytes = new byte[n];
+                        stream.createInputStream().read(bytes);
+                        String s = new String(bytes);
+                        Log.d(TAG, "parseCOSStream: bytestr:\n" + s);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
                 // restore original (possibly incorrect) length
                 stream.setItem(COSName.LENGTH, streamLengthObj);
             }
@@ -1115,6 +1139,7 @@ public class COSParser extends BaseParser {
                 throw new IOException("read error at offset " + source.getPosition()
                         + ": expected " + chunk + " bytes, but read() returns " + readBytes);
             }
+            Log.d(TAG, "readValidStream: 写 out");
             out.write(streamCopyBuf, 0, readBytes);
             remainBytes -= readBytes;
         }
@@ -2529,7 +2554,7 @@ public class COSParser extends BaseParser {
      */
     private void parseDictionaryRecursive(COSObject dictionaryObject) throws IOException {
 
-        Log.d(TAG, "parseDictionaryRecursive: "+ dictionaryObject);
+        Log.d(TAG, "parseDictionaryRecursive: " + dictionaryObject);
 
         parseObjectDynamically(dictionaryObject, true);
         if (!(dictionaryObject.getObject() instanceof COSDictionary)) {
