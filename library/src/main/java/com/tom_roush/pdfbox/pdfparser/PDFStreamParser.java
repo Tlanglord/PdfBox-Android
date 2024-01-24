@@ -38,7 +38,7 @@ import com.tom_roush.pdfbox.pdmodel.common.PDStream;
 
 /**
  * This will parse a PDF byte stream and extract operands and such.
- *
+ * 这将解析 PDF 字节流并提取操作数等
  * @author Ben Litchfield
  */
 public class PDFStreamParser extends BaseParser

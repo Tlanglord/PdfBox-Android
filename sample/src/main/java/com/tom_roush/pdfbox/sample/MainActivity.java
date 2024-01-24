@@ -127,7 +127,7 @@ public class MainActivity extends Activity {
             contentStream.setNonStrokingColor(15, 38, 192);
             contentStream.setFont(font, 12);
             contentStream.newLineAtOffset(100, 700);
-            contentStream.showText("Hello World中文");
+            contentStream.showText("Hello World");
             contentStream.endText();
 
             // Load in the images
@@ -144,9 +144,9 @@ public class MainActivity extends Activity {
             contentStream.drawImage(ximage, 20, 20);
 
             // Draw the red overlay image
-            Bitmap alphaImage = BitmapFactory.decodeStream(alpha);
-            PDImageXObject alphaXimage = LosslessFactory.createFromImage(document, alphaImage);
-            contentStream.drawImage(alphaXimage, 20, 20);
+//            Bitmap alphaImage = BitmapFactory.decodeStream(alpha);
+//            PDImageXObject alphaXimage = LosslessFactory.createFromImage(document, alphaImage);
+//            contentStream.drawImage(alphaXimage, 20, 20);
 
             // Make sure that the content stream is closed:
             contentStream.close();

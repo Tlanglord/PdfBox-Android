@@ -48,6 +48,16 @@ import com.tom_roush.pdfbox.android.PDFBoxConfig;
  * otherwise would get an {@link OutOfMemoryError} in case of using {@link RandomAccessBuffer}.</p>
  *
  * <p>This base class for providing pages is thread safe (the buffer implementations are not).</p>
+ *
+ * 实现内存页面处理机制作为创建（多个）{@link RandomAccess} 缓冲区的基础，每个缓冲区都有其页面集（由 {@link ScratchFileBuffer} 实现）。
+ * 调用 {@link createBuffer()} 创建缓冲区。
+ * <p>页面可以存储在主内存或临时文件中。
+ * 支持混合模式，在内存中存储一定数量的页面，而仅在临时文件中存储额外的页面（由要使用的最大主内存定义）。
+ * <p> <p>页面可以标记为“空闲”，以便重新使用-使用它们。
+ * 对于内存中的页面，这将释放已用的内存，而对于临时文件中的页面，这只是将该区域标记为可以重复使用。
+ * <p> <p>如果创建了临时文件（完成了要存储的第一页）在临时文件中）它会在调用 {@link ScratchFileclose()} 时被删除。
+ * <p> <p>将此类用于 {@link RandomAccess} 缓冲区可以直接控制最大内存使用量，并允许处理大文件否则，如果使用 {@link RandomAccessBuffer}，
+ * 我们会得到一个 {@link OutOfMemoryError}。<p> <p>这个用于提供页面的基类是线程安全的（缓冲区实现不是）。<p>
  */
 public class ScratchFile implements Closeable
 {
@@ -100,7 +110,7 @@ public class ScratchFile implements Closeable
      * <p>Depending on the size of allowed memory usage a number of pages (memorySize/{@link #PAGE_SIZE})
      * will be stored in-memory and only additional pages will be written to/read from scratch file.</p>
      *
-     * @param memUsageSetting set how memory/temporary files are used for buffering streams etc. 
+     * @param memUsageSetting set how memory/temporary files are used for buffering streams etc.
      *
      * @throws IOException If scratch file directory was given but don't exist.
      */
@@ -184,7 +194,7 @@ public class ScratchFile implements Closeable
     }
 
     /**
-     * This will provide new free pages by either enlarging the scratch file 
+     * This will provide new free pages by either enlarging the scratch file
      * by a number of pages defined by {@link #ENLARGE_PAGE_COUNT} - in case
      * scratch file usage is allowed - or increase the {@link #inMemoryPages}
      * array in case main memory was not restricted. If neither of both is
@@ -299,7 +309,7 @@ public class ScratchFile implements Closeable
      *
      * @param pageIdx index of page to read
      *
-     * @return byte array of size {@link #PAGE_SIZE} filled with page data read from file 
+     * @return byte array of size {@link #PAGE_SIZE} filled with page data read from file
      *
      * @throws IOException
      */
@@ -452,7 +462,7 @@ public class ScratchFile implements Closeable
      * Allows a buffer which is cleared/closed to release its pages to be re-used.
      *
      * @param pageIndexes pages indexes of pages to release
-     * @param count number of page indexes contained in provided array 
+     * @param count number of page indexes contained in provided array
      */
     void markPagesAsFree(int[] pageIndexes, int off, int count) {
 

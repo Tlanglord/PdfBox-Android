@@ -16,10 +16,13 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.state;
 
+import android.os.Build;
 import android.util.Log;
 
 import java.util.List;
 import java.io.IOException;
+import java.util.function.Consumer;
+
 import com.tom_roush.pdfbox.contentstream.operator.MissingOperandException;
 
 import com.tom_roush.pdfbox.cos.COSBase;
@@ -34,22 +37,24 @@ import com.tom_roush.pdfbox.contentstream.operator.OperatorProcessor;
  *
  * @author Laurent Huault
  */
-public class Concatenate extends OperatorProcessor
-{
+public class Concatenate extends OperatorProcessor {
 
     private static final String TAG = "Concatenate";
 
     @Override
-    public void process(Operator operator, List<COSBase> arguments) throws IOException
-    {
-        Log.d(TAG, "process: ");
+    public void process(Operator operator, List<COSBase> arguments) throws IOException {
 
-        if (arguments.size() < 6)
-        {
+        String kkk = "";
+        for (COSBase argument : arguments) {
+            kkk += argument;
+        }
+
+        Log.d(TAG, "process: kkk=" + kkk);
+
+        if (arguments.size() < 6) {
             throw new MissingOperandException(operator, arguments);
         }
-        if (!checkArrayTypesClass(arguments, COSNumber.class))
-        {
+        if (!checkArrayTypesClass(arguments, COSNumber.class)) {
             return;
         }
 
@@ -62,14 +67,13 @@ public class Concatenate extends OperatorProcessor
         COSNumber f = (COSNumber) arguments.get(5);
 
         Matrix matrix = new Matrix(a.floatValue(), b.floatValue(), c.floatValue(),
-            d.floatValue(), e.floatValue(), f.floatValue());
+                d.floatValue(), e.floatValue(), f.floatValue());
 
         context.getGraphicsState().getCurrentTransformationMatrix().concatenate(matrix);
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return OperatorName.CONCAT;
     }
 }
