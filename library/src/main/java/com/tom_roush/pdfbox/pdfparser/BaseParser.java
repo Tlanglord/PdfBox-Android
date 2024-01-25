@@ -144,7 +144,7 @@ public abstract class BaseParser {
      * @throws IOException If there is an error parsing the dictionary object.
      */
     private COSBase parseCOSDictionaryValue() throws IOException {
-        Log.d(TAG, "parseCOSDictionaryValue: ");
+        Log.d(TAG, "parseCOSDictionaryValue start");
         long numOffset = seqSource.getPosition();
         COSBase value = parseDirObject();
         skipSpaces();
@@ -176,6 +176,8 @@ public abstract class BaseParser {
             Log.e("PdfBox-Android", "invalid generation number value =" + genNumber + " at offset " + numOffset);
             return COSNull.NULL;
         }
+        Log.d(TAG, "parseCOSDictionaryValue value=" + value);
+        Log.d(TAG, "parseCOSDictionaryValue end");
         // dereference the object
         return getObjectFromPool(new COSObjectKey(objNumber, genNumber));
     }
@@ -195,7 +197,7 @@ public abstract class BaseParser {
      * @throws IOException If there is an error reading the stream.
      */
     protected COSDictionary parseCOSDictionary() throws IOException {
-        Log.d(TAG, "parseCOSDictionary: ");
+        Log.d(TAG, "parseCOSDictionary start ");
         readExpectedChar('<');
         readExpectedChar('<');
         skipSpaces();
@@ -223,6 +225,8 @@ public abstract class BaseParser {
         }
         readExpectedChar('>');
         readExpectedChar('>');
+        Log.d(TAG, "parseCOSDictionary value=" + obj);
+        Log.d(TAG, "parseCOSDictionary end ");
         return obj;
     }
 
@@ -265,7 +269,7 @@ public abstract class BaseParser {
     }
 
     private boolean parseCOSDictionaryNameValuePair(COSDictionary obj) throws IOException {
-        Log.d(TAG, "parseCOSDictionaryNameValuePair: ");
+        Log.d(TAG, "parseCOSDictionaryNameValuePair: obj:" + obj);
         COSName key = parseCOSName();
         if (key == null || key.getName().isEmpty()) {
             Log.w("PdfBox-Android", "Empty COSName at offset " + seqSource.getPosition());
@@ -360,7 +364,7 @@ public abstract class BaseParser {
      * @throws IOException If there is an error reading from the stream.
      */
     protected COSString parseCOSString() throws IOException {
-        Log.d(TAG, "parseCOSString: ");
+        Log.d(TAG, "parseCOSString start ");
         char nextChar = (char) seqSource.read();
         if (nextChar == '<') {
             return parseCOSHexString();
@@ -479,7 +483,12 @@ public abstract class BaseParser {
         if (c != -1) {
             seqSource.unread(c);
         }
-        return new COSString(out.toByteArray());
+
+        byte[] byteArray = out.toByteArray();
+        Log.d(TAG, "parseCOSString value=" + new String(byteArray, Charsets.UTF_8));
+        Log.d(TAG, "parseCOSString end ");
+
+        return new COSString(byteArray);
     }
 
     /**
@@ -494,7 +503,7 @@ public abstract class BaseParser {
      * @throws IOException If there is an error reading from the stream.
      */
     private COSString parseCOSHexString() throws IOException {
-        Log.d(TAG, "parseCOSHexString: ");
+        Log.d(TAG, "parseCOSHexString start");
         final StringBuilder sBuf = new StringBuilder();
         while (true) {
             int c = seqSource.read();
@@ -532,7 +541,11 @@ public abstract class BaseParser {
                 break;
             }
         }
-        return COSString.parseHex(sBuf.toString());
+
+        COSString cosString = COSString.parseHex(sBuf.toString());
+        Log.d(TAG, "parseCOSHexString value=" + cosString);
+        Log.d(TAG, "parseCOSHexString end");
+        return cosString;
     }
 
     /**
@@ -542,7 +555,7 @@ public abstract class BaseParser {
      * @throws IOException If there is an error parsing the stream.
      */
     protected COSArray parseCOSArray() throws IOException {
-        Log.d(TAG, "parseCOSArray: ");
+        Log.d(TAG, "parseCOSArray start");
         long startPosition = seqSource.getPosition();
         readExpectedChar('[');
         COSArray po = new COSArray();
@@ -591,6 +604,8 @@ public abstract class BaseParser {
         // read ']'
         seqSource.read();
         skipSpaces();
+        Log.d(TAG, "parseCOSArray value=" + po);
+        Log.d(TAG, "parseCOSArray end");
         return po;
     }
 
@@ -613,7 +628,7 @@ public abstract class BaseParser {
      * @throws IOException If there is an error reading from the stream.
      */
     protected COSName parseCOSName() throws IOException {
-        Log.d(TAG, "parseCOSName: ");
+        Log.d(TAG, "parseCOSName start");
         readExpectedChar('/');
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int c = seqSource.read();
@@ -666,6 +681,8 @@ public abstract class BaseParser {
             // some malformed PDFs don't use UTF-8 see PDFBOX-3347
             string = new String(bytes, Charsets.WINDOWS_1252);
         }
+        Log.d(TAG, "parseCOSName value="+string);
+        Log.d(TAG, "parseCOSName end");
         return COSName.getPDFName(string);
     }
 
@@ -721,7 +738,7 @@ public abstract class BaseParser {
      * @throws IOException If there is an error during parsing.
      */
     protected COSBase parseDirObject() throws IOException {
-        Log.d(TAG, "parseDirObject: ");
+        Log.d(TAG, "parseDirObject start");
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 //
 //            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -803,7 +820,7 @@ public abstract class BaseParser {
     }
 
     private COSNumber parseCOSNumber() throws IOException {
-        Log.d(TAG, "parseCOSNumber: ");
+        Log.d(TAG, "parseCOSNumber start");
         StringBuilder buf = new StringBuilder();
         int ic = seqSource.read();
         char c = (char) ic;
@@ -815,7 +832,10 @@ public abstract class BaseParser {
         if (ic != -1) {
             seqSource.unread(ic);
         }
-        return COSNumber.get(buf.toString());
+        String string = buf.toString();
+        Log.d(TAG, "parseCOSNumber value="+string);
+        Log.d(TAG, "parseCOSNumber end");
+        return COSNumber.get(string);
     }
 
     /**
