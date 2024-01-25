@@ -281,7 +281,7 @@ public class COSParser extends BaseParser {
      * @throws IOException if something went wrong
      */
     protected COSDictionary parseXref(long startXRefOffset) throws IOException {
-        Log.d(TAG, "parseXref: ");
+        Log.d(TAG, "parseXref: startXRefOffset start: " + startXRefOffset);
         source.seek(startXRefOffset);
         long xref = parseStartXref();
         Log.d(TAG, "parseXref: xref: " + xref);
@@ -384,7 +384,7 @@ public class COSParser extends BaseParser {
      * @return value of PREV item in dictionary or <code>-1</code> if no such item exists
      */
     private long parseXrefObjStream(long objByteOffset, boolean isStandalone) throws IOException {
-        Log.d(TAG, "parseXrefObjStream: ");
+        Log.d(TAG, "parseXrefObjStream: objByteOffset: " + objByteOffset);
         // ---- parse indirect object head
         long objectNumber = readObjectNumber();
 
@@ -559,7 +559,7 @@ public class COSParser extends BaseParser {
      * @throws IOException if something went wrong
      */
     protected void parseDictObjects(COSDictionary dict, COSName... excludeObjects) throws IOException {
-        Log.d(TAG, "parseDictObjects: ");
+        Log.d(TAG, "parseDictObjects: dict: " + dict);
         // ---- create queue for objects waiting for further parsing
         final Queue<COSBase> toBeParsedList = new LinkedList<COSBase>();
         // offset ordered object map
@@ -714,7 +714,7 @@ public class COSParser extends BaseParser {
      */
     protected COSBase parseObjectDynamically(long objNr, int objGenNr,
                                              boolean requireExistingNotCompressedObj) throws IOException {
-        Log.d(TAG, "parseObjectDynamically: ");
+        Log.d(TAG, "parseObjectDynamically: " + objNr + " " + objGenNr + " " + requireExistingNotCompressedObj);
         // ---- create object key and get object (container) from pool
         final COSObjectKey objKey = new COSObjectKey(objNr, objGenNr);
         final COSObject pdfObject = document.getObjectFromPool(objKey);
@@ -783,7 +783,7 @@ public class COSParser extends BaseParser {
     }
 
     private void parseFileObject(Long offsetOrObjstmObNr, final COSObjectKey objKey, final COSObject pdfObject) throws IOException {
-        Log.d(TAG, "parseFileObject: " + objKey);
+        Log.d(TAG, "parseFileObject: objKey: " + objKey + " ,pdfObject: " + pdfObject);
         // ---- go to object start
         source.seek(offsetOrObjstmObNr);
 
@@ -858,7 +858,7 @@ public class COSParser extends BaseParser {
     }
 
     private void parseObjectStream(int objstmObjNr) throws IOException {
-        Log.d(TAG, "parseObjectStream: ");
+        Log.d(TAG, "parseObjectStream: objstmObjNr: " + objstmObjNr);
         final COSBase objstmBaseObj = parseObjectDynamically(objstmObjNr, 0, true);
         if (objstmBaseObj instanceof COSStream) {
             // parse object stream
@@ -992,15 +992,15 @@ public class COSParser extends BaseParser {
                 out.close();
 
                 try {
-                    if (streamLengthObj.longValue() >0) {
+                    if (streamLengthObj.longValue() > 0) {
 
                         int n = (int) streamLengthObj.longValue();
-                        Log.d(TAG, "parseCOSStream: n:"+n);
-                        n =2048;
+                        Log.d(TAG, "parseCOSStream: n:" + n);
+                        n = 2048;
                         byte[] bytes = new byte[n];
                         int nn = stream.createInputStream().read(bytes);
                         String s = new String(bytes);
-                        Log.d(TAG, "parseCOSStream: nn:"+nn);
+                        Log.d(TAG, "parseCOSStream: nn:" + nn);
                         Log.d(TAG, "parseCOSStream: nn 和 n不一致 因为数据解码后长度有变化");
                         Log.d(TAG, "parseCOSStream: bytestr:\n" + s);
                     }
@@ -1145,7 +1145,7 @@ public class COSParser extends BaseParser {
                         + ": expected " + chunk + " bytes, but read() returns " + readBytes);
             }
             String streamCopyBufStr = new String(streamCopyBuf);
-            Log.d(TAG, "readValidStream: 写 out , 未解码数据，streamCopyBuf=\n"+streamCopyBufStr);
+            Log.d(TAG, "readValidStream: 写 out , 未解码数据，streamCopyBuf=\n" + streamCopyBufStr);
             out.write(streamCopyBuf, 0, readBytes);
             remainBytes -= readBytes;
         }
@@ -2247,7 +2247,7 @@ public class COSParser extends BaseParser {
     }
 
     private boolean parseHeader(String headerMarker, String defaultVersion) throws IOException {
-        Log.d(TAG, "parseHeader: ");
+        Log.d(TAG, "parseHeader: headerMarker: " + headerMarker + ", defaultVersion: " + defaultVersion);
         // read first line
         String header = readLine();
         // some pdf-documents are broken and the pdf-version is in one of the following lines
@@ -2425,7 +2425,7 @@ public class COSParser extends BaseParser {
      * @throws IOException if there is an error parsing the stream
      */
     private void parseXrefStream(COSStream stream, long objByteOffset, boolean isStandalone) throws IOException {
-        Log.d(TAG, "parseXrefStream: ");
+        Log.d(TAG, "parseXrefStream: stream: " + stream + ", objByteOffset: " + objByteOffset + ", isStandalone: " + isStandalone);
         // the cross reference stream of a hybrid xref table will be added to the existing one
         // and we must not override the offset and the trailer
         if (isStandalone) {
@@ -2486,7 +2486,7 @@ public class COSParser extends BaseParser {
      * @throws IOException If an IO error occurs or if the root object is missing in the trailer dictionary.
      */
     protected COSBase parseTrailerValuesDynamically(COSDictionary trailer) throws IOException {
-        Log.d(TAG, "parseTrailerValuesDynamically: ");
+        Log.d(TAG, "parseTrailerValuesDynamically: trailer: " + trailer);
         // PDFBOX-1557 - ensure that all COSObject are loaded in the trailer
         // PDFBOX-1606 - after securityHandler has been instantiated
         for (COSBase trailerEntry : trailer.getValues()) {
