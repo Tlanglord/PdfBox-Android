@@ -992,11 +992,16 @@ public class COSParser extends BaseParser {
                 out.close();
 
                 try {
-                    if (streamLengthObj.longValue() <= 2048) {
+                    if (streamLengthObj.longValue() >0) {
+
                         int n = (int) streamLengthObj.longValue();
+                        Log.d(TAG, "parseCOSStream: n:"+n);
+                        n =2048;
                         byte[] bytes = new byte[n];
-                        stream.createInputStream().read(bytes);
+                        int nn = stream.createInputStream().read(bytes);
                         String s = new String(bytes);
+                        Log.d(TAG, "parseCOSStream: nn:"+nn);
+                        Log.d(TAG, "parseCOSStream: nn 和 n不一致 因为数据解码后长度有变化");
                         Log.d(TAG, "parseCOSStream: bytestr:\n" + s);
                     }
                 } catch (Exception e) {
@@ -1139,7 +1144,8 @@ public class COSParser extends BaseParser {
                 throw new IOException("read error at offset " + source.getPosition()
                         + ": expected " + chunk + " bytes, but read() returns " + readBytes);
             }
-            Log.d(TAG, "readValidStream: 写 out");
+            String streamCopyBufStr = new String(streamCopyBuf);
+            Log.d(TAG, "readValidStream: 写 out , 未解码数据，streamCopyBuf=\n"+streamCopyBufStr);
             out.write(streamCopyBuf, 0, readBytes);
             remainBytes -= readBytes;
         }

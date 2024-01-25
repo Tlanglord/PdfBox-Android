@@ -287,9 +287,10 @@ public class COSStream extends COSDictionary implements Closeable
             public void close() throws IOException
             {
                 super.close();
-                setInt(COSName.LENGTH, (int)randomAccess.length());
+                long length = randomAccess.length();
+                setInt(COSName.LENGTH, (int) length);
                 isWriting = false;
-                Log.d(TAG, "close: 写完成");
+                Log.d(TAG, "close: 写完成 , lng="+length);
             }
         };
     }
