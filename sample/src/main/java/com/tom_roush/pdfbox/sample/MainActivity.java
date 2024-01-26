@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.tom_roush.fontbox.ttf.TrueTypeFont;
+import com.tom_roush.pdfbox.android.PDFBoxConfig;
 import com.tom_roush.pdfbox.pdmodel.PDDocument;
 import com.tom_roush.pdfbox.pdmodel.PDDocumentCatalog;
 import com.tom_roush.pdfbox.pdmodel.PDPage;
@@ -76,6 +77,7 @@ public class MainActivity extends Activity {
      * Initializes variables used for convenience
      */
     private void setup() {
+        PDFBoxConfig.setFontLoadLevel(PDFBoxConfig.FontLoadLevel.FULL);
         // Enable Android asset loading
         PDFBoxResourceLoader.init(getApplicationContext());
         // Find the root of the external storage.

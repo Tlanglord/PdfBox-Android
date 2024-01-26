@@ -16,21 +16,18 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.state;
 
-import android.os.Build;
 import android.util.Log;
 
-import java.util.List;
-import java.io.IOException;
-import java.util.function.Consumer;
-
 import com.tom_roush.pdfbox.contentstream.operator.MissingOperandException;
-
-import com.tom_roush.pdfbox.cos.COSBase;
-import com.tom_roush.pdfbox.cos.COSNumber;
-import com.tom_roush.pdfbox.util.Matrix;
 import com.tom_roush.pdfbox.contentstream.operator.Operator;
 import com.tom_roush.pdfbox.contentstream.operator.OperatorName;
 import com.tom_roush.pdfbox.contentstream.operator.OperatorProcessor;
+import com.tom_roush.pdfbox.cos.COSBase;
+import com.tom_roush.pdfbox.cos.COSNumber;
+import com.tom_roush.pdfbox.util.Matrix;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * cm: Concatenate matrix to current transformation matrix.

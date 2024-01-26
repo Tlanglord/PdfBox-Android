@@ -16,16 +16,9 @@
  */
 package com.tom_roush.pdfbox.pdfparser;
 
-import android.os.Build;
-import android.util.Log;
+import static com.tom_roush.pdfbox.util.Charsets.ISO_8859_1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.CharsetDecoder;
-import java.util.Arrays;
-import java.util.function.Consumer;
+import android.util.Log;
 
 import com.tom_roush.pdfbox.cos.COSArray;
 import com.tom_roush.pdfbox.cos.COSBase;
@@ -41,7 +34,11 @@ import com.tom_roush.pdfbox.cos.COSObjectKey;
 import com.tom_roush.pdfbox.cos.COSString;
 import com.tom_roush.pdfbox.util.Charsets;
 
-import static com.tom_roush.pdfbox.util.Charsets.ISO_8859_1;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
 
 /**
  * This class is used to contain parsing logic that will be used by both the
