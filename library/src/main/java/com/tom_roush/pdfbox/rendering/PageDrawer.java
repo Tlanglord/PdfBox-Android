@@ -394,8 +394,8 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
 
         Path oldPath = glyph2D.getPathForCharacterCode(code);
 
-        Path path = new Path();
-        path.set(oldPath);
+        Path path = new Path(oldPath);
+//        path.set(oldPath);
 
 //        Paint debugPaint = new Paint();
 //        debugPaint.setStyle(Paint.Style.STROKE);
