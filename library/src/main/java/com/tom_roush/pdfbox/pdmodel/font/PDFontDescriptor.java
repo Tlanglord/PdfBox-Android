@@ -861,4 +861,14 @@ public final class PDFontDescriptor implements COSObjectable
         }
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "PDFontDescriptor{" +
+                "dic=" + dic +
+                ", xHeight=" + xHeight +
+                ", capHeight=" + capHeight +
+                ", flags=" + flags +
+                '}';
+    }
 }

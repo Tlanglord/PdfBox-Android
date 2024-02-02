@@ -25,6 +25,7 @@ import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.os.Build;
 import android.util.Log;
 
 import java.io.IOException;
@@ -171,8 +172,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         this.renderer = parameters.getRenderer();
         this.subsamplingAllowed = parameters.isSubsamplingAllowed();
         this.destination = parameters.getDestination();
-        this.imageDownscalingOptimizationThreshold =
-                parameters.getImageDownscalingOptimizationThreshold();
+        this.imageDownscalingOptimizationThreshold = parameters.getImageDownscalingOptimizationThreshold();
     }
 
     /**
@@ -357,8 +357,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
     }
 
     @Override
-    protected void showFontGlyph(Matrix textRenderingMatrix, PDFont font, int code,
-                                 Vector displacement) throws IOException {
+    protected void showFontGlyph(Matrix textRenderingMatrix, PDFont font, int code, Vector displacement) throws IOException {
         Log.d(TAG, "showFontGlyph: " + code);
         AffineTransform at = textRenderingMatrix.createAffineTransform();
         at.concatenate(font.getFontMatrix().createAffineTransform());
@@ -367,12 +366,18 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         try {
             drawGlyph2D(glyph2D, font, code, displacement, at);
         } catch (IOException ex) {
-            Log.e("PdfBox-Android", "Could not draw glyph for code " + code + " at position (" +
-                    at.getTranslateX() + "," + at.getTranslateY() + ")", ex);
+            Log.e("PdfBox-Android", "Could not draw glyph for code " + code + " at position (" + at.getTranslateX() + "," + at.getTranslateY() + ")", ex);
         }
     }
 
+    private int count = 0;
+
+    private int lastWidth = 0;
+
     /**
+     * 612*792 612 x 792 是PDF中常用的页面尺寸，表示的是点（points）单位。在PDF中，1英寸等于72点，
+     * 所以这个尺寸转换为英寸就是8.5 x 11英寸，
+     * 这是标准的美国信纸尺寸（Letter size）
      * Render the font using the Glyph2D interface.
      *
      * @param glyph2D      the Glyph2D implementation provided a Path for each glyph
@@ -382,13 +387,33 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
      * @param at           the transformation
      * @throws IOException if something went wrong
      */
-    private void drawGlyph2D(Glyph2D glyph2D, PDFont font, int code, Vector displacement,
-                             AffineTransform at) throws IOException {
-        Log.d(TAG, "drawGlyph2D: " + code + " " + displacement.getX() + " " + displacement.getY());
+    private void drawGlyph2D(Glyph2D glyph2D, PDFont font, int code, Vector displacement, AffineTransform at) throws IOException {
+        Log.d(TAG, "drawGlyph2D: code=" + code + " , x=" + displacement.getX() + " , y=" + displacement.getY());
         PDGraphicsState state = getGraphicsState();
         RenderingMode renderingMode = state.getTextState().getRenderingMode();
 
-        Path path = glyph2D.getPathForCharacterCode(code);
+        Path oldPath = glyph2D.getPathForCharacterCode(code);
+
+        Path path = new Path();
+        path.set(oldPath);
+
+//        Paint debugPaint = new Paint();
+//        debugPaint.setStyle(Paint.Style.STROKE);
+
+//        Log.d(TAG, "drawGlyph2D: code=" + code);
+
+//
+//        canvas.save();
+//        canvas.translate(lastWidth, 100);
+//        canvas.scale(0.1F, 0.1F);
+//        canvas.drawPath(path, debugPaint);
+//        float debugFontWidth = font.getWidthFromFont(code);
+////        canvas.translate(-count * 60, 100);
+//        Log.d(TAG, "drawGlyph2D: code=" + code + " , debugFontWidth=" + debugFontWidth);
+//        lastWidth += debugFontWidth * 0.1;
+//        canvas.restore();
+
+
         if (path != null) {
             // Stretch non-embedded glyph if it does not match the height/width contained in the PDF.
             // Vertical fonts have zero X displacement, so the following code scales to 0 if we don't skip it.
@@ -398,13 +423,46 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
                 if (fontWidth > 0 && // ignore spaces
                         Math.abs(fontWidth - displacement.getX() * 1000) > 0.0001) {
                     float pdfWidth = displacement.getX() * 1000;
-                    at.scale(pdfWidth / fontWidth, 1);
+                    float scx = pdfWidth / fontWidth;
+                    Log.d(TAG, "drawGlyph2D: scx=" + scx);
+                    at.scale(scx, 1);
                 }
             }
 
             // render glyph
 //            Shape glyph = at.createTransformedShape(path);
-            path.transform(at.toMatrix());
+
+//            double translateX = at.getTranslateX();
+//            double translateY = at.getTranslateY();
+//
+//            double scaleX = at.getScaleX();
+//            double scaleY = at.getScaleY();
+//
+//            Log.d(TAG, "drawGlyph2D: code=" + code + " , scaleX=" + scaleX + " , scaleY=" + scaleY);
+//
+            android.graphics.Matrix matrix = at.toMatrix();
+//
+//            float[] points = new float[2];
+//            matrix.mapPoints(points);
+//
+//
+//            float x = points[0];
+//            float y = points[1];
+//            Paint paint1 = new Paint();
+//            paint1.setColor(Color.RED);
+//
+////            canvas.drawLine(x, y + 10, x, y, paint1);
+//
+//
+//            paint1.setColor(Color.BLUE);
+
+//            canvas.drawLine((float) translateX, (float) (translateY - 10), (float) translateX, (float) translateY, paint1);
+
+//            Log.d(TAG, "drawGlyph2D: points:" + " code=" + code + " , x=" + points[0] + " , y=" + points[1]);
+//            Log.d(TAG, "drawGlyph2D: pos:" + rectF);
+
+            path.transform(matrix);
+
 
             if (isContentRendered()) {
                 Log.d(TAG, "drawGlyph2D: isContentRendered");
@@ -429,12 +487,12 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
             if (renderingMode.isClip()) {
 //                textClippings.add(glyph); TODO: PdfBox-Android
             }
+
         }
     }
 
     @Override
-    protected void showType3Glyph(Matrix textRenderingMatrix, PDType3Font font, int code,
-                                  Vector displacement) throws IOException {
+    protected void showType3Glyph(Matrix textRenderingMatrix, PDType3Font font, int code, Vector displacement) throws IOException {
         Log.d(TAG, "showType3Glyph: " + code);
         PDGraphicsState state = getGraphicsState();
         RenderingMode renderingMode = state.getTextState().getRenderingMode();
@@ -626,8 +684,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         // see PDFBOX-1658 for an example
         RectF bounds = new RectF();
         linePath.computeBounds(bounds, true);
-        boolean noAntiAlias = isRectangular(linePath) && bounds.width() > 1 &&
-                bounds.height() > 1;
+        boolean noAntiAlias = isRectangular(linePath) && bounds.width() > 1 && bounds.height() > 1;
         if (noAntiAlias) {
             paint.setAntiAlias(false);
         }
@@ -716,8 +773,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
 
         Log.d(TAG, "drawImage , w=" + pdImage.getWidth() + ", w=" + pdImage.getHeight());
 
-        if (pdImage instanceof PDImageXObject &&
-                isHiddenOCG(((PDImageXObject) pdImage).getOptionalContent())) {
+        if (pdImage instanceof PDImageXObject && isHiddenOCG(((PDImageXObject) pdImage).getOptionalContent())) {
             return;
         }
         if (!isContentRendered()) {
@@ -739,8 +795,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
                 bim = pdImage.getImage();
             }
             Matrix m = new Matrix(at);
-            boolean isScaledUp = bim.getWidth() < Math.abs(Math.round(m.getScalingFactorX())) ||
-                    bim.getHeight() < Math.abs(Math.round(m.getScalingFactorY()));
+            boolean isScaledUp = bim.getWidth() < Math.abs(Math.round(m.getScalingFactorX())) || bim.getHeight() < Math.abs(Math.round(m.getScalingFactorY()));
 
             if (isScaledUp) {
 //                graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
@@ -762,7 +817,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
             } else {
 
                 Log.d(TAG, "drawImage: 画 bitmap 开始");
-                
+
                 // subsampling not allowed, draw the image
                 drawBitmap(pdImage.getImage(), at);
 
@@ -927,10 +982,8 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         } else {
             RectF bounds = shading.getBounds(new AffineTransform(), ctm);
             if (bounds != null) {
-                bounds.union((float) Math.floor(bounds.left - 1),
-                        (float) Math.floor(bounds.top - 1));
-                bounds.union((float) Math.ceil(bounds.right + 1),
-                        (float) Math.ceil(bounds.bottom + 1));
+                bounds.union((float) Math.floor(bounds.left - 1), (float) Math.floor(bounds.top - 1));
+                bounds.union((float) Math.ceil(bounds.right + 1), (float) Math.ceil(bounds.bottom + 1));
 //                area = new Area(bounds);
 //                area.intersect(getGraphicsState().getCurrentClippingPath());
             } else {
@@ -972,8 +1025,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
             android.graphics.Matrix savedTransform = canvas.getMatrix();
             // "The upper-left corner of the annotation remains at the same point in
             //  default user space; the annotation pivots around that point."
-            canvas.rotate(getCurrentPage().getRotation(),
-                    rect.getLowerLeftX(), rect.getUpperRightY());
+            canvas.rotate(getCurrentPage().getRotation(), rect.getLowerLeftX(), rect.getUpperRightY());
             super.showAnnotation(annotation);
             canvas.setMatrix(savedTransform);
         } else {
@@ -1019,16 +1071,14 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
      * @param canvas
      * @throws IOException
      */
-    protected void showTransparencyGroupOnCanvas(PDTransparencyGroup form, Canvas canvas)
-            throws IOException {
+    protected void showTransparencyGroupOnCanvas(PDTransparencyGroup form, Canvas canvas) throws IOException {
         if (isHiddenOCG(form.getOptionalContent())) {
             return;
         }
         if (!isContentRendered()) {
             return;
         }
-        TransparencyGroup group =
-                new TransparencyGroup(form, false, getGraphicsState().getCurrentTransformationMatrix(), null);
+        TransparencyGroup group = new TransparencyGroup(form, false, getGraphicsState().getCurrentTransformationMatrix(), null);
 //        Bitmap image = group.getImage();
 //        if (image == null)
 //        {
@@ -1108,8 +1158,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
          *                      masks.
          * @throws IOException
          */
-        private TransparencyGroup(PDTransparencyGroup form, boolean isSoftMask, Matrix ctm,
-                                  PDColor backdropColor) throws IOException {
+        private TransparencyGroup(PDTransparencyGroup form, boolean isSoftMask, Matrix ctm, PDColor backdropColor) throws IOException {
 //            Graphics2D savedGraphics = graphics;
 //            Area savedLastClip = lastClip;
 //            Shape savedInitialClip = initialClip;
@@ -1167,8 +1216,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
             }
 //            Graphics2D g = image.createGraphics();
 
-            boolean needsBackdrop = !isSoftMask && !form.getGroup().isIsolated() &&
-                    hasBlendMode(form, new HashSet<COSBase>());
+            boolean needsBackdrop = !isSoftMask && !form.getGroup().isIsolated() && hasBlendMode(form, new HashSet<COSBase>());
             Bitmap backdropImage = null;
             // Position of this group in parent group's coordinates
             int backdropX = 0;
@@ -1313,8 +1361,7 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
             } catch (IOException ex) {
                 continue;
             }
-            if (xObject instanceof PDTransparencyGroup &&
-                    hasBlendMode((PDTransparencyGroup) xObject, groupsDone)) {
+            if (xObject instanceof PDTransparencyGroup && hasBlendMode((PDTransparencyGroup) xObject, groupsDone)) {
                 return true;
             }
         }

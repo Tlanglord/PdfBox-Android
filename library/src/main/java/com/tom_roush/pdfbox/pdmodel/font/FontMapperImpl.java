@@ -48,6 +48,9 @@ import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
  */
 final class FontMapperImpl implements FontMapper
 {
+
+    private static final String TAG = "FontMapperImpl";
+
     private static final FontCache fontCache = new FontCache(); // todo: static cache isn't ideal
     private FontProvider fontProvider;
     private Map<String, FontInfo> fontInfoByName;
@@ -345,6 +348,10 @@ final class FontMapperImpl implements FontMapper
     public FontMapping<TrueTypeFont> getTrueTypeFont(String baseFont,
         PDFontDescriptor fontDescriptor)
     {
+
+        Log.d(TAG, "getTrueTypeFont: baseFont=" + baseFont  +" , fontDescriptor="+fontDescriptor);
+
+        //
         TrueTypeFont ttf = (TrueTypeFont)findFont(FontFormat.TTF, baseFont);
         if (ttf != null)
         {
@@ -352,11 +359,13 @@ final class FontMapperImpl implements FontMapper
         }
         else
         {
+            // 找fallback
             // fallback - todo: i.e. fuzzy match
             String fontName = getFallbackFontName(fontDescriptor);
             ttf = (TrueTypeFont) findFont(FontFormat.TTF, fontName);
             if (ttf == null)
             {
+                // 实在找不到，返回内置的 LiberationSans-Regular.ttf
                 // we have to return something here as TTFs aren't strictly required on the system
                 ttf = lastResortFont;
             }
@@ -374,6 +383,9 @@ final class FontMapperImpl implements FontMapper
     public FontMapping<FontBoxFont> getFontBoxFont(String baseFont,
         PDFontDescriptor fontDescriptor)
     {
+
+        Log.d(TAG, "getFontBoxFont: baseFont=" + baseFont  +" , fontDescriptor="+fontDescriptor);
+
         FontBoxFont font = findFontBoxFont(baseFont);
         if (font != null)
         {

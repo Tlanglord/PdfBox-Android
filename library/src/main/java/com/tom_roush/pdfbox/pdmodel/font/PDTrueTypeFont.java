@@ -210,6 +210,7 @@ public class PDTrueTypeFont extends PDSimpleFont implements PDVectorFont
         isEmbedded = ttfFont != null;
         isDamaged = fontIsDamaged;
 
+        // 找不到字体，走系统字体或者PDFBOX内置
         // substitute
         if (ttfFont == null)
         {

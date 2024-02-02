@@ -31,6 +31,8 @@ import com.tom_roush.pdfbox.pdmodel.ResourceCache;
  */
 public final class PDFontFactory
 {
+    private static final String TAG = "PDFontFactory";
+
     private PDFontFactory()
     {
     }
@@ -64,6 +66,9 @@ public final class PDFontFactory
         }
 
         COSName subType = dictionary.getCOSName(COSName.SUBTYPE);
+
+        Log.d(TAG, "createFont: type="+type+" , subType="+subType);
+
         if (COSName.TYPE1.equals(subType))
         {
             COSBase fd = dictionary.getDictionaryObject(COSName.FONT_DESC);
@@ -84,6 +89,7 @@ public final class PDFontFactory
         }
         else if (COSName.TRUE_TYPE.equals(subType))
         {
+            Log.d(TAG, "createFont: 解析字体");
             return new PDTrueTypeFont(dictionary);
         }
         else if (COSName.TYPE3.equals(subType))

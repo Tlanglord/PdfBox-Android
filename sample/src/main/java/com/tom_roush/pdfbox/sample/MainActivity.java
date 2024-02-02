@@ -27,6 +27,8 @@ import com.tom_roush.pdfbox.pdmodel.PDPage;
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream;
 import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission;
 import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
+import com.tom_roush.pdfbox.pdmodel.font.FontMapper;
+import com.tom_roush.pdfbox.pdmodel.font.FontMappers;
 import com.tom_roush.pdfbox.pdmodel.font.PDFont;
 import com.tom_roush.pdfbox.pdmodel.font.PDTrueTypeFont;
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font;
@@ -171,7 +173,7 @@ public class MainActivity extends Activity {
         // Render the page and save it to an image file
         try {
             // Load in an already created PDF
-            PDDocument document = PDDocument.load(assetManager.open("ChCreated.pdf"));
+            PDDocument document = PDDocument.load(assetManager.open("google.pdf"));
             // Create a renderer for the document
             PDFRenderer renderer = new PDFRenderer(document);
             // Render the image to an RGB Bitmap
@@ -308,6 +310,36 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             Log.e("PdfBox-Android-Sample", "Exception thrown while creating PDF for encryption", e);
         }
+    }
+
+    public void showDecryptedPdf(View v) {
+//        String path = root.getAbsolutePath() + "/crypt.pdf";
+
+        try {
+            // Load in an already created PDF
+//            PDDocument document = PDDocument.load(new File(path),"hi");
+
+            PDDocument document = PDDocument.load(assetManager.open("apple.pdf"), "123456");
+
+
+            // Create a renderer for the document
+            PDFRenderer renderer = new PDFRenderer(document);
+            // Render the image to an RGB Bitmap
+            pageImage = renderer.renderImage(0, 1, ImageType.RGB);
+
+            // Save the render result to an image
+            String path2 = root.getAbsolutePath() + "/decrypt_render.jpg";
+            File renderFile = new File(path2);
+            FileOutputStream fileOut = new FileOutputStream(renderFile);
+            pageImage.compress(Bitmap.CompressFormat.JPEG, 100, fileOut);
+            fileOut.close();
+            tv.setText("Successfully rendered image to " + path2);
+            // Optional: display the render result on screen
+            displayRenderedImage();
+        } catch (IOException e) {
+            Log.e("PdfBox-Android-Sample", "Exception thrown while rendering file", e);
+        }
+
     }
 
     /**

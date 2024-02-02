@@ -2306,6 +2306,9 @@ public class COSParser extends BaseParser {
                 throw new IOException("Error getting header version: " + header);
             }
         }
+
+        Log.d(TAG, "parseHeader: headerVersion: " + headerVersion + ", header: " + header);
+
         document.setVersion(headerVersion);
         // rewind
         source.seek(0);
