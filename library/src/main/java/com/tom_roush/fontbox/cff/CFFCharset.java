@@ -20,14 +20,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * CFF代表Compact Font Format，是一种由Adobe Systems开发的开放字体格式。CFF是一种基于PostScript的字体格式，主要用于存储和使用矢量字体。CFF字体通常用于OpenType字体文件中，可以包含PostScript格式的Type 1和Type 2字体。
+ * <p>
+ * CFF字体格式具有高度的压缩效率，可以有效地减小字体文件的大小，同时保持高质量的显示效果。CFF字体支持复杂的字形设计和排版特性，如连字、变体字符、上标、下标等。
+ * <p>
+ * 在PDF文件中，CFF字体可以嵌入到文件中，以确保文档在不同的系统和设备上具有一致的显示效果。CFF字体的使用和嵌入由PDF文件的字体子集（Font Subset）和字体描述符（Font Descriptor）来控制。
+ * <p>
  * A CFF charset. A charset is an array of SIDs/CIDs for all glyphs in the font.
- *
+ * <p>
  * todo: split this into two? CFFCharsetType1 and CFFCharsetCID ?
  *
  * @author John Hewson
  */
-public abstract class CFFCharset
-{
+public abstract class CFFCharset {
     private final boolean isCIDFont;
     private final Map<Integer, Integer> sidOrCidToGid = new HashMap<Integer, Integer>(250);
     private final Map<Integer, Integer> gidToSid = new HashMap<Integer, Integer>(250);
@@ -42,8 +47,7 @@ public abstract class CFFCharset
      *
      * @param isCIDFont true if the parent font is a CIDFont
      */
-    CFFCharset(boolean isCIDFont)
-    {
+    CFFCharset(boolean isCIDFont) {
         this.isCIDFont = isCIDFont;
     }
 
@@ -52,8 +56,7 @@ public abstract class CFFCharset
      *
      * @return true for CID fonts
      */
-    public boolean isCIDFont()
-    {
+    public boolean isCIDFont() {
         return isCIDFont;
     }
 
@@ -63,10 +66,8 @@ public abstract class CFFCharset
      * @param gid GID
      * @param sid SID
      */
-    public void addSID(int gid, int sid, String name)
-    {
-        if (isCIDFont)
-        {
+    public void addSID(int gid, int sid, String name) {
+        if (isCIDFont) {
             throw new IllegalStateException("Not a Type 1-equivalent font");
         }
         sidOrCidToGid.put(sid, gid);
@@ -81,10 +82,8 @@ public abstract class CFFCharset
      * @param gid GID
      * @param cid CID
      */
-    public void addCID(int gid, int cid)
-    {
-        if (!isCIDFont)
-        {
+    public void addCID(int gid, int cid) {
+        if (!isCIDFont) {
             throw new IllegalStateException("Not a CIDFont");
         }
         sidOrCidToGid.put(cid, gid);
@@ -97,15 +96,12 @@ public abstract class CFFCharset
      * @param gid GID
      * @return SID
      */
-    int getSIDForGID(int gid)
-    {
-        if (isCIDFont)
-        {
+    int getSIDForGID(int gid) {
+        if (isCIDFont) {
             throw new IllegalStateException("Not a Type 1-equivalent font");
         }
         Integer sid = gidToSid.get(gid);
-        if (sid == null)
-        {
+        if (sid == null) {
             return 0;
         }
         return sid;
@@ -117,15 +113,12 @@ public abstract class CFFCharset
      * @param sid SID
      * @return GID
      */
-    int getGIDForSID(int sid)
-    {
-        if (isCIDFont)
-        {
+    int getGIDForSID(int sid) {
+        if (isCIDFont) {
             throw new IllegalStateException("Not a Type 1-equivalent font");
         }
         Integer gid = sidOrCidToGid.get(sid);
-        if (gid == null)
-        {
+        if (gid == null) {
             return 0;
         }
         return gid;
@@ -137,15 +130,12 @@ public abstract class CFFCharset
      * @param cid CID
      * @return GID
      */
-    public int getGIDForCID(int cid)
-    {
-        if (!isCIDFont)
-        {
+    public int getGIDForCID(int cid) {
+        if (!isCIDFont) {
             throw new IllegalStateException("Not a CIDFont");
         }
         Integer gid = sidOrCidToGid.get(cid);
-        if (gid == null)
-        {
+        if (gid == null) {
             return 0;
         }
         return gid;
@@ -158,15 +148,12 @@ public abstract class CFFCharset
      * @param name PostScript glyph name
      * @return SID
      */
-    int getSID(String name)
-    {
-        if (isCIDFont)
-        {
+    int getSID(String name) {
+        if (isCIDFont) {
             throw new IllegalStateException("Not a Type 1-equivalent font");
         }
         Integer sid = nameToSid.get(name);
-        if (sid == null)
-        {
+        if (sid == null) {
             return 0;
         }
         return sid;
@@ -178,10 +165,8 @@ public abstract class CFFCharset
      * @param gid GID
      * @return PostScript glyph name
      */
-    public String getNameForGID(int gid)
-    {
-        if (isCIDFont)
-        {
+    public String getNameForGID(int gid) {
+        if (isCIDFont) {
             throw new IllegalStateException("Not a Type 1-equivalent font");
         }
         return gidToName.get(gid);
@@ -193,16 +178,13 @@ public abstract class CFFCharset
      * @param gid GID
      * @return CID
      */
-    public int getCIDForGID(int gid)
-    {
-        if (!isCIDFont)
-        {
+    public int getCIDForGID(int gid) {
+        if (!isCIDFont) {
             throw new IllegalStateException("Not a CIDFont");
         }
 
         Integer cid = gidToCid.get(gid);
-        if (cid != null)
-        {
+        if (cid != null) {
             return cid;
         }
         return 0;

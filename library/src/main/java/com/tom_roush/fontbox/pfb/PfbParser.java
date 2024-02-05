@@ -26,13 +26,16 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 /**
+ * 在PDF中，PFB文件（Printer Font Binary file）是Adobe Type 1字体的一种格式。Adobe Type 1是一种使用PostScript语言描述的字体格式，主要用于高分辨率打印输出。
+ * <p>
+ * PFB文件包含了字体的字形（glyph）数据，这些数据是以二进制格式存储的，因此得名"Printer Font Binary"。PFB文件通常与AFM（Adobe Font Metrics）文件配合使用，AFM文件包含了字体的度量数据，如字符宽度、字距（kerning）等。
+ * <p>
  * Parser for a pfb-file.
  *
  * @author Ben Litchfield
  * @author Michael Niedermair
  */
-public class PfbParser
-{
+public class PfbParser {
     /**
      * the pfb header length.
      * (start-marker (1 byte), ascii-/binary-marker (1 byte), size (4 byte))
@@ -59,7 +62,7 @@ public class PfbParser
      * The record types in the pfb-file.
      */
     private static final int[] PFB_RECORDS = {ASCII_MARKER, BINARY_MARKER,
-        ASCII_MARKER};
+            ASCII_MARKER};
 
     /**
      * buffersize.
@@ -83,22 +86,18 @@ public class PfbParser
 
     /**
      * Create a new object.
-     * @param filename  the file name
+     *
+     * @param filename the file name
      * @throws IOException if an IO-error occurs.
      */
-    public PfbParser(final String filename) throws IOException
-    {
+    public PfbParser(final String filename) throws IOException {
         BufferedInputStream in = null;
-        try
-        {
+        try {
             in = new BufferedInputStream(new FileInputStream(filename), BUFFER_SIZE);
             byte[] pfb = readFully(in);
             parsePfb(pfb);
-        }
-        finally
-        {
-            if (in != null)
-            {
+        } finally {
+            if (in != null) {
                 in.close();
             }
         }
@@ -106,49 +105,45 @@ public class PfbParser
 
     /**
      * Create a new object.
-     * @param in   The input.
+     *
+     * @param in The input.
      * @throws IOException if an IO-error occurs.
      */
-    public PfbParser(final InputStream in) throws IOException
-    {
+    public PfbParser(final InputStream in) throws IOException {
         byte[] pfb = readFully(in);
         parsePfb(pfb);
     }
 
     /**
      * Create a new object.
-     * @param bytes   The input.
+     *
+     * @param bytes The input.
      * @throws IOException if an IO-error occurs.
      */
-    public PfbParser(final byte[] bytes) throws IOException
-    {
+    public PfbParser(final byte[] bytes) throws IOException {
         parsePfb(bytes);
     }
 
     /**
      * Parse the pfb-array.
-     * @param pfb   The pfb-Array
+     *
+     * @param pfb The pfb-Array
      * @throws IOException in an IO-error occurs.
      */
-    private void parsePfb(final byte[] pfb) throws IOException
-    {
-        if (pfb.length < PFB_HEADER_LENGTH)
-        {
+    private void parsePfb(final byte[] pfb) throws IOException {
+        if (pfb.length < PFB_HEADER_LENGTH) {
             throw new IOException("PFB header missing");
         }
         ByteArrayInputStream in = new ByteArrayInputStream(pfb);
         pfbdata = new byte[pfb.length - PFB_HEADER_LENGTH];
         lengths = new int[PFB_RECORDS.length];
         int pointer = 0;
-        for (int records = 0; records < PFB_RECORDS.length; records++)
-        {
-            if (in.read() != START_MARKER)
-            {
+        for (int records = 0; records < PFB_RECORDS.length; records++) {
+            if (in.read() != START_MARKER) {
                 throw new IOException("Start marker missing");
             }
 
-            if (in.read() != PFB_RECORDS[records])
-            {
+            if (in.read() != PFB_RECORDS[records]) {
                 throw new IOException("Incorrect record type");
             }
 
@@ -156,24 +151,20 @@ public class PfbParser
             size += in.read() << 8;
             size += in.read() << 16;
             size += in.read() << 24;
-            if (size < 0)
-            {
+            if (size < 0) {
                 throw new IOException("PFB record size is negative: " + size);
             }
             lengths[records] = size;
-            if (pointer >= pfbdata.length)
-            {
+            if (pointer >= pfbdata.length) {
                 throw new EOFException("attempted to read past EOF");
             }
-            if (size > pfbdata.length - pointer)
-            {
+            if (size > pfbdata.length - pointer) {
                 throw new EOFException("attempted to read " + size + " bytes at position " + pointer +
-                    " into array of size " + pfbdata.length + ", but only space for " +
-                    (pfbdata.length - pointer) + " bytes left");
+                        " into array of size " + pfbdata.length + ", but only space for " +
+                        (pfbdata.length - pointer) + " bytes left");
             }
             int got = in.read(pfbdata, pointer, size);
-            if (got < 0)
-            {
+            if (got < 0) {
                 throw new EOFException();
             }
             pointer += got;
@@ -182,18 +173,17 @@ public class PfbParser
 
     /**
      * Read the pfb input.
-     * @param in    The input.
+     *
+     * @param in The input.
      * @return Returns the pfb-array.
      * @throws IOException if an IO-error occurs.
      */
-    private byte[] readFully(final InputStream in) throws IOException
-    {
+    private byte[] readFully(final InputStream in) throws IOException {
         // copy into an array
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] tmpbuf = new byte[BUFFER_SIZE];
         int amountRead;
-        while ((amountRead = in.read(tmpbuf)) != -1)
-        {
+        while ((amountRead = in.read(tmpbuf)) != -1) {
             out.write(tmpbuf, 0, amountRead);
         }
         return out.toByteArray();
@@ -201,55 +191,55 @@ public class PfbParser
 
     /**
      * Returns the lengths.
+     *
      * @return Returns the lengths.
      */
-    public int[] getLengths()
-    {
+    public int[] getLengths() {
         return lengths;
     }
 
     /**
      * Returns the pfbdata.
+     *
      * @return Returns the pfbdata.
      */
-    public byte[] getPfbdata()
-    {
+    public byte[] getPfbdata() {
         return pfbdata;
     }
 
     /**
      * Returns the pfb data as stream.
+     *
      * @return Returns the pfb data as stream.
      */
-    public InputStream getInputStream()
-    {
+    public InputStream getInputStream() {
         return new ByteArrayInputStream(pfbdata);
     }
 
     /**
      * Returns the size of the pfb-data.
+     *
      * @return Returns the size of the pfb-data.
      */
-    public int size()
-    {
+    public int size() {
         return pfbdata.length;
     }
 
     /**
      * Returns the first segment
+     *
      * @return first segment bytes
      */
-    public byte[] getSegment1()
-    {
+    public byte[] getSegment1() {
         return Arrays.copyOfRange(pfbdata, 0, lengths[0]);
     }
 
     /**
      * Returns the second segment
+     *
      * @return second segment bytes
      */
-    public byte[] getSegment2()
-    {
+    public byte[] getSegment2() {
         return Arrays.copyOfRange(pfbdata, lengths[0], lengths[0] + lengths[1]);
     }
 }

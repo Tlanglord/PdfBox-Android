@@ -30,8 +30,8 @@ android {
 }
 
 dependencies {
-    implementation project(':library')
-//    implementation "com.tom-roush:pdfbox-android:${project.VERSION_NAME}"
+//    implementation project(':library')
+    implementation "com.tom-roush:pdfbox-android:2.0.27.0"
     implementation "androidx.multidex:multidex:2.0.1"
     implementation 'androidx.appcompat:appcompat:1.6.1'
 
@@ -39,4 +39,7 @@ dependencies {
 
     // Read JPX images
     implementation 'com.gemalto.jp2:jp2-android:1.0.3'
+
+
+//    implementation 'com.itextpdf:itext7-core:7.1.13'
 }

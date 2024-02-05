@@ -34,17 +34,24 @@ import com.tom_roush.pdfbox.io.IOUtils;
 import com.tom_roush.pdfbox.pdmodel.graphics.color.PDJPXColorSpace;
 
 /**
+ * JPXFilter是PDF文件中的一种解码器（Decode）或过滤器（Filter），用于解码使用JPEG 2000压缩的图像数据。
+ * <p>
+ * JPEG 2000是一种图像压缩标准，相比于原始的JPEG标准，它提供了更高的压缩效率和更多的功能，例如无损压缩、区域性解码等。JPEG 2000使用了一种名为wavelet的数学变换，可以提供比DCT（离散余弦变换，被原始的JPEG标准使用）更好的压缩性能。
+ * <p>
+ * 在PDF文件的语法中，使用JPXFilter的数据流会标记为“/Filter /JPXDecode”。例如，一个使用JPXFilter的图像XObject可能会有这样的定义：“/Filter /JPXDecode”。
+ * <p>
+ * 需要注意的是，虽然JPEG 2000的压缩性能很好，但是它的计算复杂度也相对较高，解码JPEG 2000图像需要更多的计算资源。因此，对于需要快速显示的应用，例如网页，原始的JPEG可能是更好的选择。
+ * <p>
  * Decompress data encoded using the wavelet-based JPEG 2000 standard,
  * reproducing the original data.
- *
+ * <p>
  * Requires the JP2ForAndroid library to be available from com.gemalto.jp2:jp2-android:1.0.3, see
  * <a href="https://github.com/ThalesGroup/JP2ForAndroid">JP2ForAndroid</a>.
  *
  * @author John Hewson
  * @author Timo Boehme
  */
-public final class JPXFilter extends Filter
-{
+public final class JPXFilter extends Filter {
     private static final int CACHE_SIZE = 1024;
 
     /**
@@ -52,8 +59,7 @@ public final class JPXFilter extends Filter
      */
     @Override
     public DecodeResult decode(InputStream encoded, OutputStream decoded, COSDictionary
-        parameters, int index, DecodeOptions options) throws IOException
-    {
+            parameters, int index, DecodeOptions options) throws IOException {
         DecodeResult result = new DecodeResult(new COSDictionary());
         result.getParameters().addAll(parameters);
         Bitmap image = readJPX(encoded, options, result);
@@ -66,17 +72,15 @@ public final class JPXFilter extends Filter
         byte[] buffer = new byte[CACHE_SIZE * 3];
         int pos = 0;
 
-        for (int i = 0; i < arrLen; i++)
-        {
-            if (pos + 3 >= buffer.length)
-            {
+        for (int i = 0; i < arrLen; i++) {
+            if (pos + 3 >= buffer.length) {
                 decoded.write(buffer, 0, pos);
                 pos = 0;
             }
             int color = pixels[i];
-            buffer[pos] = (byte)Color.red(color);
-            buffer[pos + 1] = (byte)Color.green(color);
-            buffer[pos + 2] = (byte)Color.blue(color);
+            buffer[pos] = (byte) Color.red(color);
+            buffer[pos + 1] = (byte) Color.green(color);
+            buffer[pos + 2] = (byte) Color.blue(color);
             pos += 3;
         }
         decoded.write(buffer, 0, pos);
@@ -85,20 +89,15 @@ public final class JPXFilter extends Filter
 
     @Override
     public DecodeResult decode(InputStream encoded, OutputStream decoded,
-        COSDictionary parameters, int index) throws IOException
-    {
+                               COSDictionary parameters, int index) throws IOException {
         return decode(encoded, decoded, parameters, index, DecodeOptions.DEFAULT);
     }
 
     // try to read using JP2ForAndroid
-    private Bitmap readJPX(InputStream input, DecodeOptions options, DecodeResult result) throws IOException
-    {
-        try
-        {
+    private Bitmap readJPX(InputStream input, DecodeOptions options, DecodeResult result) throws IOException {
+        try {
             Class.forName("com.gemalto.jp2.JP2Decoder");
-        }
-        catch (ClassNotFoundException ex)
-        {
+        } catch (ClassNotFoundException ex) {
             throw new MissingImageReaderException("Cannot read JPX image: JP2Android is not installed.");
         }
 
@@ -119,8 +118,7 @@ public final class JPXFilter extends Filter
 //        parameters.setInt(COSName.BITS_PER_COMPONENT, bpc); TODO: PdfBox-Android
 
         // "Decode shall be ignored, except in the case where the image is treated as a mask"
-        if (!parameters.getBoolean(COSName.IMAGE_MASK, false))
-        {
+        if (!parameters.getBoolean(COSName.IMAGE_MASK, false)) {
             parameters.setItem(COSName.DECODE, null);
         }
 
@@ -129,8 +127,7 @@ public final class JPXFilter extends Filter
         parameters.setInt(COSName.HEIGHT, image.getHeight());
 
         // extract embedded color space
-        if (!parameters.containsKey(COSName.COLORSPACE) && Build.VERSION.SDK_INT > Build.VERSION_CODES.O)
-        {
+        if (!parameters.containsKey(COSName.COLORSPACE) && Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
             result.setColorSpace(new PDJPXColorSpace(image.getColorSpace()));
         }
 
@@ -142,8 +139,7 @@ public final class JPXFilter extends Filter
      */
     @Override
     protected void encode(InputStream input, OutputStream encoded, COSDictionary parameters)
-        throws IOException
-    {
+            throws IOException {
         Bitmap bitmap = BitmapFactory.decodeStream(input);
         byte[] jpeBytes = new JP2Encoder(bitmap).encode();
         IOUtils.copy(new ByteArrayInputStream(jpeBytes), encoded);

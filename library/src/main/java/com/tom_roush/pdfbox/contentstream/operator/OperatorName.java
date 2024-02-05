@@ -19,7 +19,7 @@ package com.tom_roush.pdfbox.contentstream.operator;
 public final class OperatorName
 {
 
-   // non stroking color
+   // non stroking color 描边颜色
    public static final String NON_STROKING_COLOR = "sc";
    public static final String NON_STROKING_COLOR_N = "scn";
    public static final String NON_STROKING_RGB = "rg";
@@ -35,7 +35,7 @@ public final class OperatorName
    public static final String STROKING_COLOR_CMYK = "K";
    public static final String STROKING_COLORSPACE = "CS";
 
-   // marked content
+   // marked content ， 内容
    public static final String BEGIN_MARKED_CONTENT_SEQ = "BDC";
    public static final String BEGIN_MARKED_CONTENT = "BMC";
    public static final String END_MARKED_CONTENT = "EMC";
@@ -43,7 +43,7 @@ public final class OperatorName
    public static final String MARKED_CONTENT_POINT = "MP";
    public static final String DRAW_OBJECT = "Do";
 
-   // state
+   // state ， 状态
    public static final String CONCAT = "cm";
    public static final String RESTORE = "Q";
    public static final String SAVE = "q";
@@ -57,7 +57,7 @@ public final class OperatorName
    public static final String SET_MATRIX = "Tm";
    public static final String SET_RENDERINGINTENT = "ri";
 
-   // graphics
+   // graphics 图形
    public static final String APPEND_RECT = "re";
    public static final String BEGIN_INLINE_IMAGE = "BI";
    public static final String BEGIN_INLINE_IMAGE_DATA = "ID";
@@ -82,7 +82,7 @@ public final class OperatorName
    public static final String SHADING_FILL = "sh";
    public static final String STROKE_PATH = "S";
 
-   // text
+   // text 文字
    public static final String BEGIN_TEXT = "BT";
    public static final String END_TEXT = "ET";
    public static final String MOVE_TEXT = "Td";
@@ -100,11 +100,11 @@ public final class OperatorName
    public static final String SHOW_TEXT_LINE = "'";
    public static final String SHOW_TEXT_LINE_AND_SPACE = "\"";
 
-   // type3 font
+   // type3 font 字体
    public static final String TYPE3_D0 = "d0";
    public static final String TYPE3_D1 = "d1";
 
-   // compatibility section
+   // compatibility section 兼容性
    public static final String BEGIN_COMPATIBILITY_SECTION = "BX";
    public static final String END_COMPATIBILITY_SECTION = "EX";
 

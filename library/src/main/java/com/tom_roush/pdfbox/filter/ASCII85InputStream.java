@@ -21,13 +21,18 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * ASCII85，也被称为Base85，是一种二进制到文本的编码方法，用于将二进制数据转换为ASCII字符。这种编码方法主要用于电子邮件和网络传输，以便在不支持二进制数据的系统中传输数据。
+ * <p>
+ * ASCII85编码方法的基本原理是将每4个字节（32位）的二进制数据转换为5个ASCII字符。这5个字符的ASCII值在33（'!'）到117（'u'）之间，因此得名“ASCII85”。
+ * <p>
+ * ASCII85编码比Base64编码更加紧凑，可以节省存储空间和传输带宽。例如，对于同样的二进制数据，ASCII85编码后的文本比Base64编码后的文本小约25%。
+ * <p>
+ * 在PDF文件中，ASCII85编码常用于对图像数据和二进制流进行编码。例如，PDF的图像XObject和嵌入的字体文件通常会使用ASCII85编码。
  * This class represents an ASCII85 stream.
  *
  * @author Ben Litchfield
- *
  */
-final class ASCII85InputStream extends FilterInputStream
-{
+final class ASCII85InputStream extends FilterInputStream {
     private int index;
     private int n;
     private boolean eof;
@@ -48,8 +53,7 @@ final class ASCII85InputStream extends FilterInputStream
      *
      * @param is The input stream to actually read from.
      */
-    ASCII85InputStream(InputStream is)
-    {
+    ASCII85InputStream(InputStream is) {
         super(is);
         index = 0;
         n = 0;
@@ -62,79 +66,61 @@ final class ASCII85InputStream extends FilterInputStream
      * This will read the next byte from the stream.
      *
      * @return The next byte read from the stream.
-     *
      * @throws IOException If there is an error reading from the wrapped stream.
      */
     @Override
-    public int read() throws IOException
-    {
-        if (index >= n)
-        {
-            if (eof)
-            {
+    public int read() throws IOException {
+        if (index >= n) {
+            if (eof) {
                 return -1;
             }
             index = 0;
             int k;
             byte z;
-            do
-            {
+            do {
                 int zz = (byte) in.read();
-                if (zz == -1)
-                {
+                if (zz == -1) {
                     eof = true;
                     return -1;
                 }
                 z = (byte) zz;
             } while (z == NEWLINE || z == RETURN || z == SPACE);
 
-            if (z == TERMINATOR)
-            {
+            if (z == TERMINATOR) {
                 eof = true;
                 ascii = b = null;
                 n = 0;
                 return -1;
-            }
-            else if (z == Z)
-            {
+            } else if (z == Z) {
                 b[0] = b[1] = b[2] = b[3] = 0;
                 n = 4;
-            }
-            else
-            {
+            } else {
                 ascii[0] = z; // may be EOF here....
-                for (k = 1; k < 5; ++k)
-                {
-                    do
-                    {
+                for (k = 1; k < 5; ++k) {
+                    do {
                         int zz = (byte) in.read();
-                        if (zz == -1)
-                        {
+                        if (zz == -1) {
                             eof = true;
                             return -1;
                         }
                         z = (byte) zz;
                     } while (z == NEWLINE || z == RETURN || z == SPACE);
                     ascii[k] = z;
-                    if (z == TERMINATOR)
-                    {
+                    if (z == TERMINATOR) {
                         // don't include ~ as padding byte
                         ascii[k] = (byte) PADDING_U;
                         break;
                     }
                 }
                 n = k - 1;
-                if (n == 0)
-                {
+                if (n == 0) {
                     eof = true;
                     ascii = null;
                     b = null;
                     return -1;
                 }
-                if (k < 5)
-                {
-                    for (++k; k < 5; ++k)
-                    {
+                if (k < 5) {
+                    for (++k; k < 5; ++k) {
                         // use 'u' for padding
                         ascii[k] = (byte) PADDING_U;
                     }
@@ -142,11 +128,9 @@ final class ASCII85InputStream extends FilterInputStream
                 }
                 // decode stream
                 long t = 0;
-                for (k = 0; k < 5; ++k)
-                {
+                for (k = 0; k < 5; ++k) {
                     z = (byte) (ascii[k] - OFFSET);
-                    if (z < 0 || z > 93)
-                    {
+                    if (z < 0 || z > 93) {
                         n = 0;
                         eof = true;
                         ascii = null;
@@ -155,8 +139,7 @@ final class ASCII85InputStream extends FilterInputStream
                     }
                     t = (t * 85L) + z;
                 }
-                for (k = 3; k >= 0; --k)
-                {
+                for (k = 3; k >= 0; --k) {
                     b[k] = (byte) (t & 0xFFL);
                     t >>>= 8;
                 }
@@ -168,32 +151,23 @@ final class ASCII85InputStream extends FilterInputStream
     /**
      * This will read a chunk of data.
      *
-     * @param data The buffer to write data to.
+     * @param data   The buffer to write data to.
      * @param offset The offset into the data stream.
-     * @param len The number of byte to attempt to read.
-     *
+     * @param len    The number of byte to attempt to read.
      * @return The number of bytes actually read.
-     *
      * @throws IOException If there is an error reading data from the underlying stream.
      */
     @Override
-    public int read(byte[] data, int offset, int len) throws IOException
-    {
-        if (eof && index >= n)
-        {
+    public int read(byte[] data, int offset, int len) throws IOException {
+        if (eof && index >= n) {
             return -1;
         }
-        for (int i = 0; i < len; i++)
-        {
-            if (index < n)
-            {
+        for (int i = 0; i < len; i++) {
+            if (index < n) {
                 data[i + offset] = b[index++];
-            }
-            else
-            {
+            } else {
                 int t = read();
-                if (t == -1)
-                {
+                if (t == -1) {
                     return i;
                 }
                 data[i + offset] = (byte) t;
@@ -208,8 +182,7 @@ final class ASCII85InputStream extends FilterInputStream
      * @throws IOException If there is an error closing the underlying stream.
      */
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         ascii = null;
         eof = true;
         b = null;
@@ -222,8 +195,7 @@ final class ASCII85InputStream extends FilterInputStream
      * @return False always.
      */
     @Override
-    public boolean markSupported()
-    {
+    public boolean markSupported() {
         return false;
     }
 
@@ -231,12 +203,10 @@ final class ASCII85InputStream extends FilterInputStream
      * Unsupported.
      *
      * @param nValue ignored.
-     *
      * @return Always zero.
      */
     @Override
-    public long skip(long nValue)
-    {
+    public long skip(long nValue) {
         return 0;
     }
 
@@ -246,8 +216,7 @@ final class ASCII85InputStream extends FilterInputStream
      * @return Always zero.
      */
     @Override
-    public int available()
-    {
+    public int available() {
         return 0;
     }
 
@@ -257,8 +226,7 @@ final class ASCII85InputStream extends FilterInputStream
      * @param readlimit ignored.
      */
     @Override
-    public synchronized void mark(int readlimit)
-    {
+    public synchronized void mark(int readlimit) {
     }
 
     /**
@@ -267,8 +235,7 @@ final class ASCII85InputStream extends FilterInputStream
      * @throws IOException telling that this is an unsupported action.
      */
     @Override
-    public synchronized void reset() throws IOException
-    {
+    public synchronized void reset() throws IOException {
         throw new IOException("Reset is not supported");
     }
 }

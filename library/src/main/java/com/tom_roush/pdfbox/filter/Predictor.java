@@ -24,98 +24,86 @@ import com.tom_roush.pdfbox.cos.COSDictionary;
 import com.tom_roush.pdfbox.cos.COSName;
 
 /**
- * Helper class to contain predictor decoding used by Flate and LZW filter. 
+ * 在数据压缩中，预测器（Predictor）是一种用于提高压缩效率的技术。预测器的基本思想是预测下一个数据值，然后只存储实际值与预测值之间的差异（称为残差）。由于相邻的数据值通常具有很强的相关性，因此这种方法可以有效地减少需要存储的信息量。
+ * <p>
+ * 在PDF文件中，预测器可以与某些压缩算法（如FlateDecode和LZWDecode）结合使用，以进一步提高压缩效率。预测器的类型和参数可以通过数据流的解码参数（DecodeParms）来指定。例如，一个使用FlateDecode和预测器的数据流可能会有这样的定义：“/Filter /FlateDecode /DecodeParms << /Predictor 12 /Columns 4 >>”。
+ * <p>
+ * PDF支持多种类型的预测器，包括PNG预测器（Predictor 10到15）。PNG预测器是一种在PNG图像格式中使用的预测器，它包括五种不同的预测方法：无预测、子预测、上预测、平均预测和Paeth预测。这些预测方法分别对应于Predictor 10到14。Predictor 15是最优预测，它允许对每一行选择最佳的预测方法。
+ * <p>
+ * Helper class to contain predictor decoding used by Flate and LZW filter.
  * To see the history, look at the FlateFilter class.
  */
-public final class Predictor
-{
+public final class Predictor {
 
-    private Predictor()
-    {
+    private Predictor() {
     }
 
     /**
      * Decodes a single line of data in-place.
-     * @param predictor Predictor value for the current line
-     * @param colors Number of color components, from decode parameters.
+     *
+     * @param predictor        Predictor value for the current line
+     * @param colors           Number of color components, from decode parameters.
      * @param bitsPerComponent Number of bits per components, from decode parameters.
-     * @param columns Number samples in a row, from decode parameters.
-     * @param actline Current (active) line to decode. Data will be decoded in-place,
-     *                i.e. - the contents of this buffer will be modified.
-     * @param lastline The previous decoded line. When decoding the first line, this
-     *                 parameter should be an empty byte array of the same length as
-     *                 <code>actline</code>.
+     * @param columns          Number samples in a row, from decode parameters.
+     * @param actline          Current (active) line to decode. Data will be decoded in-place,
+     *                         i.e. - the contents of this buffer will be modified.
+     * @param lastline         The previous decoded line. When decoding the first line, this
+     *                         parameter should be an empty byte array of the same length as
+     *                         <code>actline</code>.
      */
-    static void decodePredictorRow(int predictor, int colors, int bitsPerComponent, int columns, byte[] actline, byte[] lastline)
-    {
-        if (predictor == 1)
-        {
+    static void decodePredictorRow(int predictor, int colors, int bitsPerComponent, int columns, byte[] actline, byte[] lastline) {
+        if (predictor == 1) {
             // no prediction
             return;
         }
         final int bitsPerPixel = colors * bitsPerComponent;
         final int bytesPerPixel = (bitsPerPixel + 7) / 8;
         final int rowlength = actline.length;
-        switch (predictor)
-        {
+        switch (predictor) {
             case 2:
                 // PRED TIFF SUB
-                if (bitsPerComponent == 8)
-                {
+                if (bitsPerComponent == 8) {
                     // for 8 bits per component it is the same algorithm as PRED SUB of PNG format
-                    for (int p = bytesPerPixel; p < rowlength; p++)
-                    {
+                    for (int p = bytesPerPixel; p < rowlength; p++) {
                         int sub = actline[p] & 0xff;
                         int left = actline[p - bytesPerPixel] & 0xff;
                         actline[p] = (byte) (sub + left);
                     }
                     break;
                 }
-                if (bitsPerComponent == 16)
-                {
-                    for (int p = bytesPerPixel; p < rowlength - 1; p += 2)
-                    {
+                if (bitsPerComponent == 16) {
+                    for (int p = bytesPerPixel; p < rowlength - 1; p += 2) {
                         int sub = ((actline[p] & 0xff) << 8) + (actline[p + 1] & 0xff);
                         int left = (((actline[p - bytesPerPixel] & 0xff) << 8)
-                            + (actline[p - bytesPerPixel + 1] & 0xff));
+                                + (actline[p - bytesPerPixel + 1] & 0xff));
                         actline[p] = (byte) (((sub + left) >> 8) & 0xff);
                         actline[p + 1] = (byte) ((sub + left) & 0xff);
                     }
                     break;
                 }
-                if (bitsPerComponent == 1 && colors == 1)
-                {
+                if (bitsPerComponent == 1 && colors == 1) {
                     // bytesPerPixel cannot be used:
                     // "A row shall occupy a whole number of bytes, rounded up if necessary.
                     // Samples and their components shall be packed into bytes
                     // from high-order to low-order bits."
-                    for (int p = 0; p < rowlength; p++)
-                    {
-                        for (int bit = 7; bit >= 0; --bit)
-                        {
+                    for (int p = 0; p < rowlength; p++) {
+                        for (int bit = 7; bit >= 0; --bit) {
                             int sub = (actline[p] >> bit) & 1;
-                            if (p == 0 && bit == 7)
-                            {
+                            if (p == 0 && bit == 7) {
                                 continue;
                             }
                             int left;
-                            if (bit == 7)
-                            {
+                            if (bit == 7) {
                                 // use bit #0 from previous byte
                                 left = actline[p - 1] & 1;
-                            }
-                            else
-                            {
+                            } else {
                                 // use "previous" bit
                                 left = (actline[p] >> (bit + 1)) & 1;
                             }
-                            if (((sub + left) & 1) == 0)
-                            {
+                            if (((sub + left) & 1) == 0) {
                                 // reset bit
                                 actline[p] &= ~(1 << bit);
-                            }
-                            else
-                            {
+                            } else {
                                 // set bit
                                 actline[p] |= 1 << bit;
                             }
@@ -125,8 +113,7 @@ public final class Predictor
                 }
                 // everything else, i.e. bpc 2 and 4, but has been tested for bpc 1 and 8 too
                 int elements = columns * colors;
-                for (int p = colors; p < elements; ++p)
-                {
+                for (int p = colors; p < elements; ++p) {
                     int bytePosSub = p * bitsPerComponent / 8;
                     int bitPosSub = 8 - p * bitsPerComponent % 8 - bitsPerComponent;
                     int bytePosLeft = (p - colors) * bitsPerComponent / 8;
@@ -143,8 +130,7 @@ public final class Predictor
                 break;
             case 11:
                 // PRED SUB
-                for (int p = bytesPerPixel; p < rowlength; p++)
-                {
+                for (int p = bytesPerPixel; p < rowlength; p++) {
                     int sub = actline[p];
                     int left = actline[p - bytesPerPixel];
                     actline[p] = (byte) (sub + left);
@@ -152,8 +138,7 @@ public final class Predictor
                 break;
             case 12:
                 // PRED UP
-                for (int p = 0; p < rowlength; p++)
-                {
+                for (int p = 0; p < rowlength; p++) {
                     int up = actline[p] & 0xff;
                     int prior = lastline[p] & 0xff;
                     actline[p] = (byte) ((up + prior) & 0xff);
@@ -161,8 +146,7 @@ public final class Predictor
                 break;
             case 13:
                 // PRED AVG
-                for (int p = 0; p < rowlength; p++)
-                {
+                for (int p = 0; p < rowlength; p++) {
                     int avg = actline[p] & 0xff;
                     int left = p - bytesPerPixel >= 0 ? actline[p - bytesPerPixel] & 0xff : 0;
                     int up = lastline[p] & 0xff;
@@ -171,8 +155,7 @@ public final class Predictor
                 break;
             case 14:
                 // PRED PAETH
-                for (int p = 0; p < rowlength; p++)
-                {
+                for (int p = 0; p < rowlength; p++) {
                     int paeth = actline[p] & 0xff;
                     int a = p - bytesPerPixel >= 0 ? actline[p - bytesPerPixel] & 0xff : 0;// left
                     int b = lastline[p] & 0xff;// upper
@@ -182,16 +165,11 @@ public final class Predictor
                     int absb = Math.abs(value - b);
                     int absc = Math.abs(value - c);
 
-                    if (absa <= absb && absa <= absc)
-                    {
+                    if (absa <= absb && absa <= absc) {
                         actline[p] = (byte) ((paeth + a) & 0xff);
-                    }
-                    else if (absb <= absc)
-                    {
+                    } else if (absb <= absc) {
                         actline[p] = (byte) ((paeth + b) & 0xff);
-                    }
-                    else
-                    {
+                    } else {
                         actline[p] = (byte) ((paeth + c) & 0xff);
                     }
                 }
@@ -201,22 +179,19 @@ public final class Predictor
         }
     }
 
-    static int calculateRowLength(int colors, int bitsPerComponent, int columns)
-    {
+    static int calculateRowLength(int colors, int bitsPerComponent, int columns) {
         final int bitsPerPixel = colors * bitsPerComponent;
-        return  (columns * bitsPerPixel + 7) / 8;
+        return (columns * bitsPerPixel + 7) / 8;
     }
 
     // get value from bit interval from a byte
-    static int getBitSeq(int by, int startBit, int bitSize)
-    {
+    static int getBitSeq(int by, int startBit, int bitSize) {
         int mask = ((1 << bitSize) - 1);
         return (by >>> startBit) & mask;
     }
 
     // set value in a bit interval and return that value
-    static int calcSetBitSeq(int by, int startBit, int bitSize, int val)
-    {
+    static int calcSetBitSeq(int by, int startBit, int bitSize, int val) {
         int mask = ((1 << bitSize) - 1);
         int truncatedVal = val & mask;
         mask = ~(mask << startBit);
@@ -227,24 +202,20 @@ public final class Predictor
      * Wraps and <code>OutputStream</code> in a predictor decoding stream as necessary.
      * If no predictor is specified by the parameters, the original stream is returned as is.
      *
-     * @param out The stream to which decoded data should be written
+     * @param out          The stream to which decoded data should be written
      * @param decodeParams Decode parameters for the stream
      * @return An <code>OutputStream</code> is returned, which will write decoded data
      * into the given stream. If no predictor is specified, the original stream is returned.
      */
-    static OutputStream wrapPredictor(OutputStream out, COSDictionary decodeParams)
-    {
+    static OutputStream wrapPredictor(OutputStream out, COSDictionary decodeParams) {
         int predictor = decodeParams.getInt(COSName.PREDICTOR);
-        if (predictor > 1)
-        {
+        if (predictor > 1) {
             int colors = Math.min(decodeParams.getInt(COSName.COLORS, 1), 32);
             int bitsPerPixel = decodeParams.getInt(COSName.BITS_PER_COMPONENT, 8);
             int columns = decodeParams.getInt(COSName.COLUMNS, 1);
 
             return new PredictorOutputStream(out, predictor, colors, bitsPerPixel, columns);
-        }
-        else
-        {
+        } else {
             return out;
         }
     }
@@ -254,8 +225,7 @@ public final class Predictor
      * row is available, which is then decoded and written to the underlying stream.
      * The previous row is retained for decoding the next row.
      */
-    private static final class PredictorOutputStream extends FilterOutputStream
-    {
+    private static final class PredictorOutputStream extends FilterOutputStream {
         // current predictor type
         private int predictor;
         // image decode parameters
@@ -275,8 +245,7 @@ public final class Predictor
         // was the per-row predictor value read for the current row being processed
         private boolean predictorRead = false;
 
-        PredictorOutputStream(OutputStream out, int predictor, int colors, int bitsPerComponent, int columns)
-        {
+        PredictorOutputStream(OutputStream out, int predictor, int colors, int bitsPerComponent, int columns) {
             super(out);
             this.predictor = predictor;
             this.colors = colors;
@@ -289,28 +258,22 @@ public final class Predictor
         }
 
         @Override
-        public void write(byte[] bytes) throws IOException
-        {
+        public void write(byte[] bytes) throws IOException {
             write(bytes, 0, bytes.length);
         }
 
         @Override
-        public void write(byte[] bytes, int off, int len) throws IOException
-        {
+        public void write(byte[] bytes, int off, int len) throws IOException {
             int currentOffset = off;
             int maxOffset = currentOffset + len;
-            while (currentOffset < maxOffset)
-            {
-                if (predictorPerRow && currentRowData == 0 && !predictorRead)
-                {
+            while (currentOffset < maxOffset) {
+                if (predictorPerRow && currentRowData == 0 && !predictorRead) {
                     // PNG predictor; each row starts with predictor type (0, 1, 2, 3, 4)
                     // read per line predictor, add 10 to tread value 0 as 10, 1 as 11, ...
                     predictor = bytes[currentOffset] + 10;
                     currentOffset++;
                     predictorRead = true;
-                }
-                else
-                {
+                } else {
                     int toRead = Math.min(rowLength - currentRowData, maxOffset - currentOffset);
                     System.arraycopy(bytes, currentOffset, currentRow, currentRowData, toRead);
                     currentRowData += toRead;
@@ -318,16 +281,14 @@ public final class Predictor
 
                     // current row is filled, decode it, write it to underlying stream,
                     // and reset the state.
-                    if (currentRowData == currentRow.length)
-                    {
+                    if (currentRowData == currentRow.length) {
                         decodeAndWriteRow();
                     }
                 }
             }
         }
 
-        private void decodeAndWriteRow() throws IOException
-        {
+        private void decodeAndWriteRow() throws IOException {
             decodePredictorRow(predictor, colors, bitsPerComponent, columns, currentRow, lastRow);
             out.write(currentRow);
             flipRows();
@@ -337,8 +298,7 @@ public final class Predictor
          * Flips the row buffers (to avoid copying), and resets the current-row index
          * and predictorRead flag
          */
-        private void flipRows()
-        {
+        private void flipRows() {
             byte[] temp = lastRow;
             lastRow = currentRow;
             currentRow = temp;
@@ -347,20 +307,17 @@ public final class Predictor
         }
 
         @Override
-        public void flush() throws IOException
-        {
+        public void flush() throws IOException {
             // The last row is allowed to be incomplete, and should be completed with zeros.
-            if (currentRowData > 0)
-            {
-                Arrays.fill(currentRow, currentRowData, rowLength, (byte)0);
+            if (currentRowData > 0) {
+                Arrays.fill(currentRow, currentRowData, rowLength, (byte) 0);
                 decodeAndWriteRow();
             }
             super.flush();
         }
 
         @Override
-        public void write(int i) throws IOException
-        {
+        public void write(int i) throws IOException {
             throw new UnsupportedOperationException("Not supported");
         }
     }

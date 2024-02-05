@@ -18,7 +18,14 @@ import java.io.InputStream;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.canvas.parser.EventType;
+import com.itextpdf.kernel.pdf.canvas.parser.PdfDocumentContentParser;
+import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData;
+import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener;
 import com.tom_roush.fontbox.ttf.TrueTypeFont;
 import com.tom_roush.pdfbox.android.PDFBoxConfig;
 import com.tom_roush.pdfbox.pdmodel.PDDocument;
@@ -319,7 +326,7 @@ public class MainActivity extends Activity {
             // Load in an already created PDF
 //            PDDocument document = PDDocument.load(new File(path),"hi");
 
-            PDDocument document = PDDocument.load(assetManager.open("apple.pdf"), "123456");
+            PDDocument document = PDDocument.load(assetManager.open("single_password.pdf"), "azerty");
 
 
             // Create a renderer for the document
@@ -339,6 +346,28 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             Log.e("PdfBox-Android-Sample", "Exception thrown while rendering file", e);
         }
+
+    }
+
+    private void itextRender() {
+
+        try {
+            PdfDocument pdfDocument = new PdfDocument(new PdfReader(assetManager.open("single_password.pdf")));
+            PdfDocumentContentParser parser = new PdfDocumentContentParser(pdfDocument);
+            parser.processContent(0, new IEventListener() {
+                @Override
+                public void eventOccurred(IEventData data, EventType type) {
+
+                }
+
+                @Override
+                public Set<EventType> getSupportedEvents() {
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+        }
+
 
     }
 

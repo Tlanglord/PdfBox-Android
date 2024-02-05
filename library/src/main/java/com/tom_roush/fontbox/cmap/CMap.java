@@ -27,11 +27,14 @@ import java.util.Map;
 
 /**
  * This class represents a CMap file.
+ * <p>
+ * CMap，全称Character Map，是PDF文件中用于描述字符编码映射的一种结构。它将字符编码（通常是一个或多个字节）映射到一个字符ID，这个字符ID再映射到一个字形（glyph）。字形是字符在显示或打印时的具体形状。
+ * <p>
+ * 在PDF文件中，CMap主要用于处理CID-keyed字体（Character ID-keyed fonts）。CID-keyed字体是一种可以包含大量字符的字体格式，特别适合于亚洲语言，如中文、日文和韩文。
  *
  * @author Ben Litchfield
  */
-public class CMap
-{
+public class CMap {
     private int wmode = 0;
     private String cmapName = null;
     private String cmapVersion = null;
@@ -48,13 +51,13 @@ public class CMap
     private final List<CodespaceRange> codespaceRanges = new ArrayList<CodespaceRange>();
 
     // Unicode mappings
-    private final Map<Integer,String> charToUnicode = new HashMap<Integer,String>();
+    private final Map<Integer, String> charToUnicode = new HashMap<Integer, String>();
 
     // inverted map
-    private final Map <String, byte[]> unicodeToByteCodes = new HashMap<String, byte[]>();
+    private final Map<String, byte[]> unicodeToByteCodes = new HashMap<String, byte[]>();
 
     // CID mappings
-    private final Map<Integer,Integer> codeToCid = new HashMap<Integer,Integer>();
+    private final Map<Integer, Integer> codeToCid = new HashMap<Integer, Integer>();
     private final List<CIDRange> codeToCidRanges = new ArrayList<CIDRange>();
 
     private static final String SPACE = " ";
@@ -63,8 +66,7 @@ public class CMap
     /**
      * Creates a new instance of CMap.
      */
-    CMap()
-    {
+    CMap() {
     }
 
     /**
@@ -72,8 +74,7 @@ public class CMap
      *
      * @return true If there are any CID mappings, false otherwise.
      */
-    public boolean hasCIDMappings()
-    {
+    public boolean hasCIDMappings() {
         return !codeToCid.isEmpty() || !codeToCidRanges.isEmpty();
     }
 
@@ -82,8 +83,7 @@ public class CMap
      *
      * @return true If there are any Unicode mappings, false otherwise.
      */
-    public boolean hasUnicodeMappings()
-    {
+    public boolean hasUnicodeMappings() {
         return !charToUnicode.isEmpty();
     }
 
@@ -93,8 +93,7 @@ public class CMap
      * @param code character code
      * @return Unicode characters (may be more than one, e.g "fi" ligature)
      */
-    public String toUnicode(int code)
-    {
+    public String toUnicode(int code) {
         return charToUnicode.get(code);
     }
 
@@ -106,41 +105,32 @@ public class CMap
      * @return character code
      * @throws IOException if there was an error reading the stream or CMap
      */
-    public int readCode(InputStream in) throws IOException
-    {
+    public int readCode(InputStream in) throws IOException {
         byte[] bytes = new byte[maxCodeLength];
-        in.read(bytes,0,minCodeLength);
+        in.read(bytes, 0, minCodeLength);
         in.mark(maxCodeLength);
-        for (int i = minCodeLength-1; i < maxCodeLength; i++)
-        {
-            final int byteCount = i+1;
-            for (CodespaceRange range : codespaceRanges)
-            {
-                if (range.isFullMatch(bytes, byteCount))
-                {
+        for (int i = minCodeLength - 1; i < maxCodeLength; i++) {
+            final int byteCount = i + 1;
+            for (CodespaceRange range : codespaceRanges) {
+                if (range.isFullMatch(bytes, byteCount)) {
                     return toInt(bytes, byteCount);
                 }
             }
-            if (byteCount < maxCodeLength)
-            {
-                bytes[byteCount] = (byte)in.read();
+            if (byteCount < maxCodeLength) {
+                bytes[byteCount] = (byte) in.read();
             }
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < maxCodeLength; ++i)
-        {
+        for (int i = 0; i < maxCodeLength; ++i) {
             sb.append(String.format("0x%02X (%04o) ", bytes[i], bytes[i]));
         }
         Log.w("PdfBox-Android", "Invalid character code sequence " + sb + "in CMap " + cmapName);
         // PDFBOX-4811 reposition to where we were after initial read
-        if (in.markSupported())
-        {
+        if (in.markSupported()) {
             in.reset();
-        }
-        else
-        {
+        } else {
             Log.w("PdfBox-Android", "mark() and reset() not supported, " + (maxCodeLength - 1) +
-                " bytes have been skipped");
+                    " bytes have been skipped");
         }
         return toInt(bytes, minCodeLength); // Adobe Reader behavior
     }
@@ -148,11 +138,9 @@ public class CMap
     /**
      * Returns an int for the given byte array
      */
-    static int toInt(byte[] data, int dataLen)
-    {
+    static int toInt(byte[] data, int dataLen) {
         int code = 0;
-        for (int i = 0; i < dataLen; ++i)
-        {
+        for (int i = 0; i < dataLen; ++i) {
             code <<= 8;
             code |= (data[i] & 0xFF);
         }
@@ -165,18 +153,14 @@ public class CMap
      * @param code character code
      * @return CID
      */
-    public int toCID(int code)
-    {
+    public int toCID(int code) {
         Integer cid = codeToCid.get(code);
-        if (cid != null)
-        {
+        if (cid != null) {
             return cid;
         }
-        for (CIDRange range : codeToCidRanges)
-        {
-            int ch = range.map((char)code);
-            if (ch != -1)
-            {
+        for (CIDRange range : codeToCidRanges) {
+            int ch = range.map((char) code);
+            if (ch != -1) {
                 return ch;
             }
         }
@@ -185,18 +169,17 @@ public class CMap
 
     /**
      * Convert the given part of a byte array to an integer.
-     * @param data the byte array
+     *
+     * @param data   the byte array
      * @param offset The offset into the byte array.
      * @param length The length of the data we are getting.
      * @return the resulting integer
      */
-    private int getCodeFromArray( byte[] data, int offset, int length )
-    {
+    private int getCodeFromArray(byte[] data, int offset, int length) {
         int code = 0;
-        for( int i=0; i<length; i++ )
-        {
+        for (int i = 0; i < length; i++) {
             code <<= 8;
-            code |= (data[offset+i]+256)%256;
+            code |= (data[offset + i] + 256) % 256;
         }
         return code;
     }
@@ -204,18 +187,16 @@ public class CMap
     /**
      * This will add a character code to Unicode character sequence mapping.
      *
-     * @param codes The character codes to map from.
+     * @param codes   The character codes to map from.
      * @param unicode The Unicode characters to map to.
      */
-    void addCharMapping(byte[] codes, String unicode)
-    {
+    void addCharMapping(byte[] codes, String unicode) {
         unicodeToByteCodes.put(unicode, codes.clone()); // clone needed, bytes is modified later
         int code = getCodeFromArray(codes, 0, codes.length);
         charToUnicode.put(code, unicode);
 
         // fixme: ugly little hack
-        if (SPACE.equals(unicode))
-        {
+        if (SPACE.equals(unicode)) {
             spaceMapping = code;
         }
     }
@@ -226,8 +207,7 @@ public class CMap
      * @param unicode The unicode string.
      * @return the code bytes or null if there is none.
      */
-    public byte[] getCodesFromUnicode(String unicode)
-    {
+    public byte[] getCodesFromUnicode(String unicode) {
         return unicodeToByteCodes.get(unicode);
     }
 
@@ -235,10 +215,9 @@ public class CMap
      * This will add a CID mapping.
      *
      * @param code character code
-     * @param cid CID
+     * @param cid  CID
      */
-    void addCIDMapping(int code, int cid)
-    {
+    void addCIDMapping(int code, int cid) {
         codeToCid.put(cid, code);
     }
 
@@ -246,19 +225,15 @@ public class CMap
      * This will add a CID Range.
      *
      * @param from starting character of the CID range.
-     * @param to ending character of the CID range.
-     * @param cid the cid to be started with.
-     *
+     * @param to   ending character of the CID range.
+     * @param cid  the cid to be started with.
      */
-    void addCIDRange(char from, char to, int cid)
-    {
+    void addCIDRange(char from, char to, int cid) {
         CIDRange lastRange = null;
-        if (!codeToCidRanges.isEmpty())
-        {
+        if (!codeToCidRanges.isEmpty()) {
             lastRange = codeToCidRanges.get(codeToCidRanges.size() - 1);
         }
-        if (lastRange == null || !lastRange.extend(from, to, cid))
-        {
+        if (lastRange == null || !lastRange.extend(from, to, cid)) {
             codeToCidRanges.add(new CIDRange(from, to, cid));
         }
     }
@@ -268,8 +243,7 @@ public class CMap
      *
      * @param range A single codespace range.
      */
-    void addCodespaceRange( CodespaceRange range )
-    {
+    void addCodespaceRange(CodespaceRange range) {
         codespaceRanges.add(range);
         maxCodeLength = Math.max(maxCodeLength, range.getCodeLength());
         minCodeLength = Math.min(minCodeLength, range.getCodeLength());
@@ -281,10 +255,8 @@ public class CMap
      *
      * @param cmap The cmap to load mappings from.
      */
-    void useCmap( CMap cmap )
-    {
-        for (CodespaceRange codespaceRange : cmap.codespaceRanges)
-        {
+    void useCmap(CMap cmap) {
+        for (CodespaceRange codespaceRange : cmap.codespaceRanges) {
             addCodespaceRange(codespaceRange);
         }
         charToUnicode.putAll(cmap.charToUnicode);
@@ -297,13 +269,12 @@ public class CMap
 
     /**
      * Returns the WMode of a CMap.
-     *
+     * <p>
      * 0 represents a horizontal and 1 represents a vertical orientation.
      *
      * @return the wmode
      */
-    public int getWMode()
-    {
+    public int getWMode() {
         return wmode;
     }
 
@@ -312,8 +283,7 @@ public class CMap
      *
      * @param newWMode the new WMode.
      */
-    public void setWMode(int newWMode)
-    {
+    public void setWMode(int newWMode) {
         wmode = newWMode;
     }
 
@@ -322,8 +292,7 @@ public class CMap
      *
      * @return the CMap name.
      */
-    public String getName()
-    {
+    public String getName() {
         return cmapName;
     }
 
@@ -332,8 +301,7 @@ public class CMap
      *
      * @param name the CMap name.
      */
-    public void setName(String name)
-    {
+    public void setName(String name) {
         cmapName = name;
     }
 
@@ -342,8 +310,7 @@ public class CMap
      *
      * @return the CMap version.
      */
-    public String getVersion()
-    {
+    public String getVersion() {
         return cmapVersion;
     }
 
@@ -352,8 +319,7 @@ public class CMap
      *
      * @param version the CMap version.
      */
-    public void setVersion(String version)
-    {
+    public void setVersion(String version) {
         cmapVersion = version;
     }
 
@@ -362,8 +328,7 @@ public class CMap
      *
      * @return the CMap type.
      */
-    public int getType()
-    {
+    public int getType() {
         return cmapType;
     }
 
@@ -372,8 +337,7 @@ public class CMap
      *
      * @param type the CMap type.
      */
-    public void setType(int type)
-    {
+    public void setType(int type) {
         cmapType = type;
     }
 
@@ -382,8 +346,7 @@ public class CMap
      *
      * @return the registry.
      */
-    public String getRegistry()
-    {
+    public String getRegistry() {
         return registry;
     }
 
@@ -392,8 +355,7 @@ public class CMap
      *
      * @param newRegistry the registry.
      */
-    public void setRegistry(String newRegistry)
-    {
+    public void setRegistry(String newRegistry) {
         registry = newRegistry;
     }
 
@@ -402,8 +364,7 @@ public class CMap
      *
      * @return the ordering.
      */
-    public String getOrdering()
-    {
+    public String getOrdering() {
         return ordering;
     }
 
@@ -412,8 +373,7 @@ public class CMap
      *
      * @param newOrdering the ordering.
      */
-    public void setOrdering(String newOrdering)
-    {
+    public void setOrdering(String newOrdering) {
         ordering = newOrdering;
     }
 
@@ -422,8 +382,7 @@ public class CMap
      *
      * @return the supplement.
      */
-    public int getSupplement()
-    {
+    public int getSupplement() {
         return supplement;
     }
 
@@ -432,8 +391,7 @@ public class CMap
      *
      * @param newSupplement the supplement.
      */
-    public void setSupplement(int newSupplement)
-    {
+    public void setSupplement(int newSupplement) {
         supplement = newSupplement;
     }
 
@@ -442,14 +400,12 @@ public class CMap
      *
      * @return the mapped code for the space character
      */
-    public int getSpaceMapping()
-    {
+    public int getSpaceMapping() {
         return spaceMapping;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return cmapName;
     }
 }
