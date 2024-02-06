@@ -143,9 +143,11 @@ public abstract class PDFStreamEngine {
     public void processPage(PDPage page) throws IOException {
         initPage(page);
         if (page.hasContents()) {
+            Log.d(TAG, "processPage: start process page");
             isProcessingPage = true;
             processStream(page);
             isProcessingPage = false;
+            Log.d(TAG, "processPage: end process page");
         }
     }
 
@@ -487,13 +489,14 @@ public abstract class PDFStreamEngine {
      * @throws IOException if there is an error reading or parsing the content stream.
      */
     private void processStreamOperators(PDContentStream contentStream) throws IOException {
-        Log.d(TAG, "processStreamOperators: 开始处理流");
+        Log.d(TAG, "processStreamOperators: 开始处理流 ," + hashCode());
 
         List<COSBase> arguments = new ArrayList<COSBase>();
         PDFStreamParser parser = new PDFStreamParser(contentStream);
         Object token = parser.parseNextToken();
         while (token != null) {
             if (token instanceof Operator) {
+                Log.d(TAG, "processStreamOperators token : " + token);
                 processOperator((Operator) token, arguments);
                 arguments.clear();
             } else {
@@ -504,7 +507,7 @@ public abstract class PDFStreamEngine {
             token = parser.parseNextToken();
         }
 
-        Log.d(TAG, "processStreamOperators: 处理流结束");
+        Log.d(TAG, "processStreamOperators: 处理流结束 ," + hashCode());
     }
 
     /**
@@ -951,7 +954,7 @@ public abstract class PDFStreamEngine {
      * @return the saved graphics state stack.
      */
     protected final Deque<PDGraphicsState> saveGraphicsStack() {
-        Log.d(TAG, "saveGraphicsStack: ");
+        Log.d(TAG, "saveGraphicsStack ");
         Deque<PDGraphicsState> savedStack = graphicsStack;
         graphicsStack = new ArrayDeque<PDGraphicsState>(1);
         graphicsStack.add(savedStack.peek().clone());

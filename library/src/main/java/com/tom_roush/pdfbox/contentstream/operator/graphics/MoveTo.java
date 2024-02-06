@@ -17,6 +17,7 @@
 package com.tom_roush.pdfbox.contentstream.operator.graphics;
 
 import android.graphics.PointF;
+import android.util.Log;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,6 +56,8 @@ public final class MoveTo extends GraphicsOperatorProcessor
         COSNumber y = (COSNumber) base1;
         PointF pos = context.transformedPoint(x.floatValue(), y.floatValue());
         context.moveTo(pos.x, pos.y);
+
+        Log.d(TAG, "process: m=move_to  , x=" + x.floatValue() + " y=" + y.floatValue());
     }
 
     @Override

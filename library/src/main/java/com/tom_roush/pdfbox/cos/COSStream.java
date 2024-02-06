@@ -68,7 +68,7 @@ public class COSStream extends COSDictionary implements Closeable
      */
     public COSStream(ScratchFile scratchFile)
     {
-        Log.d(TAG, "COSStream: ");
+        Log.d(TAG, "new COSStream ");
         setInt(COSName.LENGTH, 0);
         this.scratchFile = scratchFile != null ? scratchFile : ScratchFile.getMainMemoryOnlyInstance();
     }

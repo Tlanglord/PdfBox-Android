@@ -281,7 +281,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         int r = Math.round(floats[0] * 255);
         int g = Math.round(floats[1] * 255);
         int b = Math.round(floats[2] * 255);
-        return Color.argb(alpha, r, g, b);
+        int argb = Color.argb(alpha, r, g, b);
+        Log.d(TAG, "getColor: " + argb + " , alpha=" + alpha + " , r=" + r + " , g=" + g + " , b=" + b);
+        return argb;
     }
 
     /**
@@ -584,6 +586,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
 
     // set stroke based on the current CTM and the current stroke
     private void setStroke() {
+
+        Log.d(TAG, "setStroke  start");
+
         PDGraphicsState state = getGraphicsState();
 
         // apply the CTM
@@ -617,6 +622,15 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         if (dashArray != null) {
             paint.setPathEffect(new DashPathEffect(dashArray, phaseStart));
         }
+
+        Log.d(TAG, "setStroke: lineWidth=" + lineWidth);
+        Log.d(TAG, "setStroke: lineCap=" + state.getLineCap());
+        Log.d(TAG, "setStroke: lineJoin=" + state.getLineJoin());
+        Log.d(TAG, "setStroke: miterLimit=" + miterLimit);
+        Log.d(TAG, "setStroke: dashArray=" + dashArray);
+
+        Log.d(TAG, "setStroke  end");
+
     }
 
     private boolean isAllZeroDash(float[] dashArray) {
@@ -664,7 +678,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         if (isContentRendered()) {
             setStroke();
             paint.setStyle(Paint.Style.STROKE);
-            paint.setColor(getStrokingColor());
+            int strokingColor = getStrokingColor();
+            paint.setColor(strokingColor);
+            Log.d(TAG, "strokePath: paint.setColor=" + strokingColor);
             setClip();
             canvas.drawPath(linePath, paint);
         }
@@ -996,6 +1012,9 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
 
     @Override
     public void showAnnotation(PDAnnotation annotation) throws IOException {
+
+        Log.d(TAG, "showAnnotation start");
+
         lastClip = null;
         // Device checks shouldn't be needed
         if (annotation.isNoView()) {
@@ -1031,6 +1050,8 @@ public class PageDrawer extends PDFGraphicsStreamEngine {
         } else {
             super.showAnnotation(annotation);
         }
+
+        Log.d(TAG, "showAnnotation end");
     }
 
     /**

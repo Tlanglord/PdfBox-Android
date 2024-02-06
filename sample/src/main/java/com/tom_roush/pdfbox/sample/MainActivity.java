@@ -3,7 +3,6 @@ package com.tom_roush.pdfbox.sample;
 import android.app.Activity;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -11,37 +10,18 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.Security;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfReader;
-import com.itextpdf.kernel.pdf.canvas.parser.EventType;
-import com.itextpdf.kernel.pdf.canvas.parser.PdfDocumentContentParser;
-import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData;
-import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener;
-import com.tom_roush.fontbox.ttf.TrueTypeFont;
 import com.tom_roush.pdfbox.android.PDFBoxConfig;
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
 import com.tom_roush.pdfbox.pdmodel.PDDocument;
 import com.tom_roush.pdfbox.pdmodel.PDDocumentCatalog;
 import com.tom_roush.pdfbox.pdmodel.PDPage;
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream;
 import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission;
 import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
-import com.tom_roush.pdfbox.pdmodel.font.FontMapper;
-import com.tom_roush.pdfbox.pdmodel.font.FontMappers;
 import com.tom_roush.pdfbox.pdmodel.font.PDFont;
-import com.tom_roush.pdfbox.pdmodel.font.PDTrueTypeFont;
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font;
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font;
 import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory;
-import com.tom_roush.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDCheckBox;
@@ -53,9 +33,16 @@ import com.tom_roush.pdfbox.pdmodel.interactive.form.PDTextField;
 import com.tom_roush.pdfbox.rendering.ImageType;
 import com.tom_roush.pdfbox.rendering.PDFRenderer;
 import com.tom_roush.pdfbox.text.PDFTextStripper;
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Security;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
     File root;
@@ -180,9 +167,10 @@ public class MainActivity extends Activity {
         // Render the page and save it to an image file
         try {
             // Load in an already created PDF
-            PDDocument document = PDDocument.load(assetManager.open("google.pdf"));
+            PDDocument document = PDDocument.load(assetManager.open("goole_tt.pdf"));
             // Create a renderer for the document
             PDFRenderer renderer = new PDFRenderer(document);
+
             // Render the image to an RGB Bitmap
             pageImage = renderer.renderImage(0, 1, ImageType.RGB);
 
@@ -346,28 +334,6 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             Log.e("PdfBox-Android-Sample", "Exception thrown while rendering file", e);
         }
-
-    }
-
-    private void itextRender() {
-
-        try {
-            PdfDocument pdfDocument = new PdfDocument(new PdfReader(assetManager.open("single_password.pdf")));
-            PdfDocumentContentParser parser = new PdfDocumentContentParser(pdfDocument);
-            parser.processContent(0, new IEventListener() {
-                @Override
-                public void eventOccurred(IEventData data, EventType type) {
-
-                }
-
-                @Override
-                public Set<EventType> getSupportedEvents() {
-                    return null;
-                }
-            });
-        } catch (Exception e) {
-        }
-
 
     }
 

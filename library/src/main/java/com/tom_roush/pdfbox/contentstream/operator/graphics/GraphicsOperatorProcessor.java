@@ -25,15 +25,16 @@ import com.tom_roush.pdfbox.contentstream.operator.OperatorProcessor;
  *
  * @author John Hewson
  */
-public abstract class GraphicsOperatorProcessor extends OperatorProcessor
-{
-    /** The processing context. */
+public abstract class GraphicsOperatorProcessor extends OperatorProcessor {
+
+    /**
+     * The processing context.
+     */
     protected PDFGraphicsStreamEngine context;
 
     @Override
-    public void setContext(PDFStreamEngine context)
-    {
+    public void setContext(PDFStreamEngine context) {
         super.setContext(context);
-        this.context = (PDFGraphicsStreamEngine)context;
+        this.context = (PDFGraphicsStreamEngine) context;
     }
 }

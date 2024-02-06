@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.graphics;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -35,6 +37,8 @@ public class CloseAndStrokePath extends GraphicsOperatorProcessor
     {
         context.processOperator(OperatorName.CLOSE_PATH, arguments);
         context.processOperator(OperatorName.STROKE_PATH, arguments);
+
+        Log.d(TAG, "process: s , close and stroke path");
     }
 
     @Override

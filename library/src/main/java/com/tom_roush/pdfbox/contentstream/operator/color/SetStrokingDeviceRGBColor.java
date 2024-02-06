@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.color;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -45,6 +47,7 @@ public class SetStrokingDeviceRGBColor extends SetStrokingColor
         PDColorSpace cs = context.getResources().getColorSpace(COSName.DEVICERGB);
         context.getGraphicsState().setStrokingColorSpace(cs);
         super.process(operator, arguments);
+        Log.d(TAG, "process: RG, set stroking color space to DeviceRGB, cs=" + cs);
     }
 
     @Override

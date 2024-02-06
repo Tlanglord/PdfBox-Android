@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.color;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -39,6 +41,7 @@ public class SetNonStrokingDeviceGrayColor extends SetNonStrokingColor
         PDColorSpace cs = context.getResources().getColorSpace(COSName.DEVICEGRAY);
         context.getGraphicsState().setNonStrokingColorSpace(cs);
         super.process(operator, arguments);
+        Log.d(TAG, "process: g=set_non_stroking_device_gray_color");
     }
 
     @Override

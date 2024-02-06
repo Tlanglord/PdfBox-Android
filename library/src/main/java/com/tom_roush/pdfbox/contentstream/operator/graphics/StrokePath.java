@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.graphics;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -28,17 +30,15 @@ import com.tom_roush.pdfbox.cos.COSBase;
  *
  * @author Ben Litchfield
  */
-public final class StrokePath extends GraphicsOperatorProcessor
-{
+public final class StrokePath extends GraphicsOperatorProcessor {
     @Override
-    public void process(Operator operator, List<COSBase> operands) throws IOException
-    {
+    public void process(Operator operator, List<COSBase> operands) throws IOException {
         context.strokePath();
+        Log.d(TAG, "process: S=stroke_path , stroke path");
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return OperatorName.STROKE_PATH;
     }
 }

@@ -30,8 +30,8 @@ android {
 }
 
 dependencies {
-//    implementation project(':library')
-    implementation "com.tom-roush:pdfbox-android:2.0.27.0"
+    implementation project(':library')
+//    implementation "com.tom-roush:pdfbox-android:2.0.27.0"
     implementation "androidx.multidex:multidex:2.0.1"
     implementation 'androidx.appcompat:appcompat:1.6.1'
 

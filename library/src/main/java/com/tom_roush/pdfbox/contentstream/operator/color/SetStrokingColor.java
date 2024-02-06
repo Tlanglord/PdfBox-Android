@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.color;
 
+import android.util.Log;
+
 import com.tom_roush.pdfbox.contentstream.operator.OperatorName;
 import com.tom_roush.pdfbox.pdmodel.graphics.color.PDColor;
 import com.tom_roush.pdfbox.pdmodel.graphics.color.PDColorSpace;
@@ -34,6 +36,7 @@ public class SetStrokingColor extends SetColor
     @Override
     protected PDColor getColor()
     {
+        Log.d(TAG, "getColor: SC=stroking_color, getStrokingColor");
         return context.getGraphicsState().getStrokingColor();
     }
 
@@ -44,6 +47,7 @@ public class SetStrokingColor extends SetColor
     @Override
     protected void setColor(PDColor color)
     {
+        Log.d(TAG, "SC=stroking_color: setStrokingColor, color=" + color);
         context.getGraphicsState().setStrokingColor(color);
     }
 

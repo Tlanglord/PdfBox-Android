@@ -58,6 +58,8 @@ public class SetGraphicsStateParameters extends OperatorProcessor
             return;
         }
         gs.copyIntoGraphicsState( context.getGraphicsState() );
+
+        Log.d(TAG, "process: gs, name=" + graphicsName.getName());
     }
 
     @Override

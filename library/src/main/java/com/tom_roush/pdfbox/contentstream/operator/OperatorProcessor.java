@@ -27,38 +27,41 @@ import com.tom_roush.pdfbox.cos.COSBase;
  *
  * @author Laurent Huault
  */
-public abstract class OperatorProcessor
-{
-    /** The processing context. */
+public abstract class OperatorProcessor {
+
+    protected final String TAG = getClass().getSimpleName();
+    /**
+     * The processing context.
+     */
     protected PDFStreamEngine context;
 
     /**
      * Creates a new OperatorProcessor.
      */
-    protected OperatorProcessor()
-    {
+    protected OperatorProcessor() {
     }
 
     /**
      * Returns the processing context.
+     *
      * @return the processing context
      */
-    protected final PDFStreamEngine getContext()
-    {
+    protected final PDFStreamEngine getContext() {
         return context;
     }
 
     /**
      * Sets the processing context.
+     *
      * @param context the processing context.
      */
-    public void setContext(PDFStreamEngine context)
-    {
+    public void setContext(PDFStreamEngine context) {
         this.context = context;
     }
 
     /**
      * Process the operator.
+     *
      * @param operator the operator to process
      * @param operands the operands to use when processing
      * @throws IOException if the operator cannot be processed
@@ -74,15 +77,12 @@ public abstract class OperatorProcessor
      * Check whether all operands list elements are an instance of a specific class.
      *
      * @param operands The operands list.
-     * @param clazz The expected class.
+     * @param clazz    The expected class.
      * @return the boolean
      */
-    public boolean checkArrayTypesClass(List<COSBase> operands, Class<?> clazz)
-    {
-        for (COSBase base : operands)
-        {
-            if (!clazz.isInstance(base))
-            {
+    public boolean checkArrayTypesClass(List<COSBase> operands, Class<?> clazz) {
+        for (COSBase base : operands) {
+            if (!clazz.isInstance(base)) {
                 return false;
             }
         }

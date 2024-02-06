@@ -30,22 +30,20 @@ import com.tom_roush.pdfbox.cos.COSBase;
  *
  * @author Ben Litchfield
  */
-public final class ClosePath extends GraphicsOperatorProcessor
-{
+public final class ClosePath extends GraphicsOperatorProcessor {
     @Override
-    public void process(Operator operator, List<COSBase> operands) throws IOException
-    {
-        if (context.getCurrentPoint() == null)
-        {
+    public void process(Operator operator, List<COSBase> operands) throws IOException {
+        if (context.getCurrentPoint() == null) {
             Log.w("PdfBox-Android", "ClosePath without initial MoveTo");
             return;
         }
         context.closePath();
+
+        Log.d(TAG, "process: h=close_path , close path");
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return OperatorName.CLOSE_PATH;
     }
 }

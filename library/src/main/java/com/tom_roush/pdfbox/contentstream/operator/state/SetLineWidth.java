@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.state;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -31,22 +33,20 @@ import com.tom_roush.pdfbox.cos.COSNumber;
  *
  * @author Ben Litchfield
  */
-public class SetLineWidth extends OperatorProcessor
-{
+public class SetLineWidth extends OperatorProcessor {
     @Override
-    public void process(Operator operator, List<COSBase> arguments) throws IOException
-    {
-        if (arguments.isEmpty())
-        {
+    public void process(Operator operator, List<COSBase> arguments) throws IOException {
+        if (arguments.isEmpty()) {
             throw new MissingOperandException(operator, arguments);
         }
         COSNumber width = (COSNumber) arguments.get(0);
         context.getGraphicsState().setLineWidth(width.floatValue());
+
+        Log.d(TAG, "process: w=set_line_width , width=" + width.floatValue());
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return OperatorName.SET_LINE_WIDTH;
     }
 }

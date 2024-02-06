@@ -33,45 +33,41 @@ import com.tom_roush.pdfbox.cos.COSNumber;
  *
  * @author Ben Litchfield
  */
-public class LineTo extends GraphicsOperatorProcessor
-{
+public class LineTo extends GraphicsOperatorProcessor {
     @Override
-    public void process(Operator operator, List<COSBase> operands) throws IOException
-    {
-        if (operands.size() < 2)
-        {
+    public void process(Operator operator, List<COSBase> operands) throws IOException {
+
+
+        if (operands.size() < 2) {
             throw new MissingOperandException(operator, operands);
         }
         COSBase base0 = operands.get(0);
-        if (!(base0 instanceof COSNumber))
-        {
+        if (!(base0 instanceof COSNumber)) {
             return;
         }
         COSBase base1 = operands.get(1);
-        if (!(base1 instanceof COSNumber))
-        {
+        if (!(base1 instanceof COSNumber)) {
             return;
         }
         // append straight line segment from the current point to the point
         COSNumber x = (COSNumber) base0;
         COSNumber y = (COSNumber) base1;
 
+        Log.d(TAG, "process: l=line_to  , x=" + x.floatValue() + " y=" + y.floatValue());
+
+
         PointF pos = context.transformedPoint(x.floatValue(), y.floatValue());
 
-        if (context.getCurrentPoint() == null)
-        {
+        if (context.getCurrentPoint() == null) {
             Log.w("PdfBox-Android", "LineTo (" + pos.x + "," + pos.y + ") without initial MoveTo");
             context.moveTo(pos.x, pos.y);
-        }
-        else
-        {
+        } else {
             context.lineTo(pos.x, pos.y);
         }
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return OperatorName.LINE_TO;
     }
 }

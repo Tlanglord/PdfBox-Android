@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.graphics;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -34,6 +36,7 @@ public final class EndPath extends GraphicsOperatorProcessor
     public void process(Operator operator, List<COSBase> operands) throws IOException
     {
         context.endPath();
+        Log.d(TAG, "process: n=end_path");
     }
 
     @Override

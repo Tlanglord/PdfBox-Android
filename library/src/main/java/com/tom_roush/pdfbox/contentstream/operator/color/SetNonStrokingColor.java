@@ -16,6 +16,8 @@
  */
 package com.tom_roush.pdfbox.contentstream.operator.color;
 
+import android.util.Log;
+
 import com.tom_roush.pdfbox.contentstream.operator.OperatorName;
 import com.tom_roush.pdfbox.pdmodel.graphics.color.PDColor;
 import com.tom_roush.pdfbox.pdmodel.graphics.color.PDColorSpace;
@@ -34,6 +36,7 @@ public class SetNonStrokingColor extends SetColor
     @Override
     protected PDColor getColor()
     {
+        Log.d(TAG, "getColor: sc=non_stroking_color, getNonStrokingColor");
         return context.getGraphicsState().getNonStrokingColor();
     }
 
