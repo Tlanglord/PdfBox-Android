@@ -1,14 +1,25 @@
 package com.tom_roush.pdfbox.sample;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 
 import com.tom_roush.pdfbox.android.PDFBoxConfig;
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
@@ -45,6 +56,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
+
+    private static final String TAG = "permission";
+
     File root;
     AssetManager assetManager;
     Bitmap pageImage;
@@ -54,6 +68,69 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "onCreate: audio permission  granted");
+            } else {
+                Log.d(TAG, "onCreate: audio permission  not granted");
+                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (permissions[0].equals(Manifest.permission.RECORD_AUDIO) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "onRequestPermissionsResult: audio permission  granted");
+        } else {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                boolean b = shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO);
+                if (b) {
+                    Log.d(TAG, "onRequestPermissionsResult: audio permission  denied but not permanently");
+
+                    // 在这里显示一个对话框，引导用户到设置页面手动开启权限
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("权限申请")
+                            .setMessage("未开启录音权限，不能使用录音功能")
+                            .setPositiveButton("打开设置", (dialog, which) -> {
+                                openAppSettings();
+                            })
+                            .setNegativeButton("取消", (dialog, which) -> {
+                            })
+                            .setCancelable(false)
+                            .show();
+                } else {
+                    // 在这里显示一个对话框，引导用户到设置页面手动开启权限
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("权限申请")
+                            .setMessage("未开启录音权限，不能使用录音功能")
+                            .setPositiveButton("打开设置", (dialog, which) -> {
+                                openAppSettings();
+                            })
+                            .setNegativeButton("取消", (dialog, which) -> {
+                            })
+                            .setCancelable(false)
+                            .show();
+                }
+            }
+        }
+
+
+    }
+
+    private void openAppSettings() {
+        // 打开应用设置页面
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", getPackageName(), null));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult ");
     }
 
     @Override
